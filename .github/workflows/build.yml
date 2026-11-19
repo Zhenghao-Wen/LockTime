@@ -17,6 +17,15 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      # updateurl.txt 被 .gitignore 忽略（仅用于本地更新地址），CI 构建需要一个占位文件供 resx 引用。
+      - name: Create placeholder update URL
+        shell: pwsh
+        run: |
+          $path = "Src/LockTime/Resources/updateurl.txt"
+          if (-not (Test-Path $path)) {
+            Set-Content -Path $path -Value "https://example.invalid" -NoNewline -Encoding ascii
+          }
+
       - name: Verify dependency version
         shell: pwsh
         run: |
