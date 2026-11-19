@@ -431,9 +431,9 @@
         </member>
         <member name="P:iNKORE.UI.WPF.Modern.Common.ImageIconSource.ImageSource">
             <summary>
-            Gets or sets the URI of the image file to use as the icon.
+            Gets or sets the System.Windows.Media.ImageSource to use as the icon.
             </summary>
-            <returns>The <see cref="T:System.Uri"/> of the image file to use as the icon. The default is <see langword="null"/>.</returns>
+            <returns>The <see cref="T:System.Windows.Media.ImageSource"/> of the image to use as the icon. The default is <see langword="null"/>.</returns>
         </member>
         <member name="M:iNKORE.UI.WPF.Modern.Common.ImageIconSource.CreateIconElementCore">
             <inheritdoc/>
@@ -578,6 +578,15 @@
             <summary>
             Initializes a new instance of the RatingItemInfo class.
             </summary>
+        </member>
+        <member name="P:iNKORE.UI.WPF.Modern.Common.ShadowAssist.UseBitmapCache">
+            <summary>
+            Whether to use BitmapCache for shadow rendering and animations.
+            </summary>
+            <remarks>
+            For applications with multiple windows, please set this property to false to avoid possible freezing issues.
+            <see href="https://github.com/dotnet/wpf/issues/2158"/>
+            </remarks>
         </member>
         <member name="T:iNKORE.UI.WPF.Modern.Common.SimpleVisualStateManager">
             <summary>
@@ -1487,6 +1496,20 @@
             <param name="control">The element on which to set the attached property.</param>
             <param name="value">The visual state for the control.</param>
         </member>
+        <member name="M:iNKORE.UI.WPF.Modern.Controls.Helpers.ExpanderAnimationsHelper.InitializeExpanderState(System.Windows.Controls.Expander)">
+            <summary>
+            Initializes the visual state of an expander on initial load without animations.
+            This method sets the expander content to the appropriate state (collapsed or expanded)
+            immediately to prevent visual flashing during load.
+            </summary>
+            <remarks>
+            This method is called during the initial load of the expander to avoid triggering
+            layout updates and animations that would cause the content to briefly render at
+            full size before collapsing. For collapsed expanders, it sets visibility directly
+            to Collapsed. For expanded expanders, it ensures visibility is Visible and resets
+            any transforms to identity without animation.
+            </remarks>
+        </member>
         <member name="M:iNKORE.UI.WPF.Modern.Controls.Helpers.FocusVisualHelper.GetFocusVisualPrimaryBrush(System.Windows.FrameworkElement)">
             <summary>
             Gets the brush used to draw the outer border of a HighVisibility focus
@@ -1925,9 +1948,10 @@
             <param name="element">The element from which to read the property value.</param>
             <param name="value">Whether the add (+) tab button is visible.</param>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Helpers.TabControlHelper.TabControlHelperEventsProperty">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Helpers.TabControlHelper.TabCloseRequestedEvent">
             <summary>
-            Identifies the TabControlHelperEvents dependency property.
+            The event is raised when a tab's close button is clicked.
+            
             </summary>
         </member>
         <member name="F:iNKORE.UI.WPF.Modern.Controls.Helpers.TabControlHelper.AddTabButtonCommandProperty">
@@ -2024,21 +2048,6 @@
             Gets the tab in which a close is being requested.
             </summary>
         </member>
-        <member name="T:iNKORE.UI.WPF.Modern.Controls.Helpers.TabControlHelperEvents">
-            <summary>
-            Events for TabControlHelper.
-            </summary>
-        </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Helpers.TabControlHelperEvents.AddTabButtonClick">
-            <summary>
-            Occurs when the add (+) tab button has been clicked.
-            </summary>
-        </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Helpers.TabControlHelperEvents.TabCloseRequested">
-            <summary>
-            Raised when the user attempts to close a Tab via clicking the x-to-close button, CTRL+F4, or mousewheel.
-            </summary>
-        </member>
         <member name="T:iNKORE.UI.WPF.Modern.Controls.Helpers.TabItemHelper">
             <summary>
             TabViewItem Properties
@@ -2063,19 +2072,9 @@
             Identifies the Icon dependency property.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Helpers.TabItemHelper.TabItemHelperEventsProperty">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Helpers.TabItemHelper.IsClosableProperty">
             <summary>
-            Identifies the TabItemHelperEvents dependency property.
-            </summary>
-        </member>
-        <member name="T:iNKORE.UI.WPF.Modern.Controls.Helpers.TabItemHelperEvents">
-            <summary>
-            Events for TabItemHelper.
-            </summary>
-        </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Helpers.TabItemHelperEvents.CloseRequested">
-            <summary>
-            Raised when the user attempts to close the TabViewItem via clicking the x-to-close button, CTRL+F4, or mousewheel.
+            Identifies the IsClosable dependency property that indicates whether the tab shows a close button. true if the tab shows a close button; otherwise, false. The default is true.
             </summary>
         </member>
         <member name="M:iNKORE.UI.WPF.Modern.Controls.Helpers.TreeViewItemHelper.GetCollapsedGlyph(System.Windows.Controls.TreeViewItem)">
@@ -2223,169 +2222,144 @@
             <param name="treeViewItem">The element from which to read the property value.</param>
             <returns>The amount that the item is indented.</returns>
         </member>
-        <member name="T:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper">
+        <member name="T:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper">
             <summary>
-            用来使窗口变得全屏的辅助类
-            采用设置窗口位置和尺寸，确保盖住整个屏幕的方式来实现全屏
-            目前已知需要满足的条件是：窗口盖住整个屏幕、窗口没有WS_THICKFRAME样式、窗口不能有标题栏且最大化
+            Helper class for making a window fullscreen.
+            Achieves fullscreen by setting window position and size to cover the entire screen.
+            Known requirements: window must cover the entire screen, must not have WS_THICKFRAME style, must not have a title bar and be maximized.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.BeforeFullScreenWindowPlacementProperty">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.BeforeFullscreenWindowPlacementProperty">
             <summary>
-            用于记录窗口全屏前位置的附加属性
+            Attached property to store window placement before entering fullscreen.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.BeforeFullScreenWindowStyleProperty">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.BeforeFullscreenWindowStyleProperty">
             <summary>
-            用于记录窗口全屏前样式的附加属性
+            Attached property to store window style before entering fullscreen.
             </summary>
         </member>
-        <member name="M:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.StartFullScreen(System.Windows.Window)">
+        <member name="M:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.StartFullscreen(System.Windows.Window)">
             <summary>
-            开始进入全屏模式
-            进入全屏模式后，窗口可通过 API 方式（也可以用 Win + Shift + Left/Right）移动，调整大小，但会根据目标矩形寻找显示器重新调整到全屏状态。
-            进入全屏后，不要修改样式等窗口属性，在退出时，会恢复到进入前的状态
-            进入全屏模式后会禁用 DWM 过渡动画
-            </summary>
-            <param name="window"></param>
-        </member>
-        <member name="M:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.EndFullScreen(System.Windows.Window)">
-            <summary>
-            退出全屏模式
-            窗口会回到进入全屏模式时保存的状态
-            退出全屏模式后会重新启用 DWM 过渡动画
+            Start fullscreen mode.
+            After entering fullscreen, the window can be moved or resized via API (or Win + Shift + Left/Right), but will be reset to fullscreen based on the target rectangle and monitor.
+            Do not modify window styles or properties while in fullscreen; they will be restored when exiting.
+            DWM transition animations are disabled in fullscreen mode.
             </summary>
             <param name="window"></param>
         </member>
-        <member name="M:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.KeepFullScreenHook(System.IntPtr,System.Int32,System.IntPtr,System.IntPtr,System.Boolean@)">
+        <member name="M:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.EndFullscreen(System.Windows.Window)">
             <summary>
-            确保窗口全屏的Hook
-            使用HandleProcessCorruptedStateExceptions，防止访问内存过程中因为一些致命异常导致程序崩溃
+            Exit fullscreen mode.
+            Window will return to the state saved before entering fullscreen.
+            DWM transition animations are re-enabled after exiting fullscreen.
+            </summary>
+            <param name="window"></param>
+        </member>
+        <member name="M:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.KeepFullscreenHook(System.IntPtr,System.Int32,System.IntPtr,System.IntPtr,System.Boolean@)">
+            <summary>
+            Hook to keep window fullscreen.
+            Uses HandleProcessCorruptedStateExceptions to prevent crashes from fatal exceptions during memory access.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.Win32.ShowWindowCommands.SW_MAXIMIZE">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.Win32.ShowWindowCommands.SW_MAXIMIZE">
             <summary>
-                Maximizes the specified window.
+            Maximizes the specified window.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.Win32.ShowWindowCommands.SW_RESTORE">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.Win32.ShowWindowCommands.SW_RESTORE">
             <summary>
-                Activates and displays the window. If the window is minimized or maximized, the system restores it to its original
-                size and position. An application should specify this flag when restoring a minimized window.
+            Activates and displays the window. If the window is minimized or maximized, the system restores it to its original size and position. An application should specify this flag when restoring a minimized window.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.MonitorInfo.Size">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.MonitorInfo.Size">
             <summary>
-                The size of the structure, in bytes.
+            The size of the structure, in bytes.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.MonitorInfo.MonitorRect">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.MonitorInfo.MonitorRect">
             <summary>
-                A RECT structure that specifies the display monitor rectangle, expressed in virtual-screen coordinates. Note that
-                if the monitor is not the primary display monitor, some of the rectangle's coordinates may be negative values.
+            A RECT structure that specifies the display monitor rectangle, expressed in virtual-screen coordinates. If the monitor is not the primary display monitor, some coordinates may be negative.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.MonitorInfo.WorkRect">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.MonitorInfo.WorkRect">
             <summary>
-                A RECT structure that specifies the work area rectangle of the display monitor, expressed in virtual-screen
-                coordinates. Note that if the monitor is not the primary display monitor, some of the rectangle's coordinates may
-                be negative values.
+            A RECT structure that specifies the work area rectangle of the display monitor, expressed in virtual-screen coordinates. If the monitor is not the primary display monitor, some coordinates may be negative.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.MonitorInfo.Flags">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.MonitorInfo.Flags">
             <summary>
-                A set of flags that represent attributes of the display monitor.
+            Flags representing attributes of the display monitor.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.MonitorFlag.MONITOR_DEFAULTTOPRIMARY">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.MonitorFlag.MONITOR_DEFAULTTOPRIMARY">
             <summary>
-                Returns a handle to the primary display monitor.
+            Returns a handle to the primary display monitor.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.HwndZOrder.HWND_TOP">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.HwndZOrder.HWND_TOP">
             <summary>
-                Places the window at the top of the Z order.
+            Places the window at the top of the Z order.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.GetWindowLongFields.GWL_STYLE">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.GetWindowLongFields.GWL_STYLE">
             <summary>
-            设定一个新的窗口风格
-            Retrieves the window styles
+            Retrieves the window styles.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.WindowPositionFlags.SWP_NOCOPYBITS">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.WindowPositionFlags.SWP_NOCOPYBITS">
             <summary>
-            <para>
-            清除客户区的所有内容。如果未设置该标志，客户区的有效内容被保存并且在窗口尺寸更新和重定位后拷贝回客户区
-            </para>
-                Discards the entire contents of the client area. If this flag is not specified, the valid contents of the client
-                area are saved and copied back into the client area after the window is sized or repositioned.
+            Discards the entire contents of the client area. If not specified, valid contents are saved and copied back after window is sized or repositioned.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.WindowPositionFlags.SWP_NOMOVE">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.WindowPositionFlags.SWP_NOMOVE">
             <summary>
-            <para>
-            维持当前位置（忽略X和Y参数）
-            </para>
-                Retains the current position (ignores X and Y parameters).
+            Retains the current position (ignores X and Y parameters).
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.WindowPositionFlags.SWP_NOREDRAW">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.WindowPositionFlags.SWP_NOREDRAW">
             <summary>
-            <para>
-            不重画改变的内容。如果设置了这个标志，则不发生任何重画动作。适用于客户区和非客户区（包括标题栏和滚动条）和任何由于窗回移动而露出的父窗口的所有部分。如果设置了这个标志，应用程序必须明确地使窗口无效并区重画窗口的任何部分和父窗口需要重画的部分
-            </para>
-                Does not redraw changes. If this flag is set, no repainting of any kind occurs. This applies to the client area,
-                the nonclient area (including the title bar and scroll bars), and any part of the parent window uncovered as a
-                result of the window being moved. When this flag is set, the application must explicitly invalidate or redraw any
-                parts of the window and parent window that need redrawing.
+            Does not redraw changes. If set, no repainting occurs. Applies to client and nonclient area, and any part of parent window uncovered. Application must explicitly invalidate/redraw any parts needing update.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.WindowPositionFlags.SWP_NOSIZE">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.WindowPositionFlags.SWP_NOSIZE">
             <summary>
-            <para>
-            维持当前尺寸（忽略 cx 和 cy 参数）
-            </para>
-                Retains the current size (ignores the cx and cy parameters).
+            Retains the current size (ignores cx and cy parameters).
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.WindowPositionFlags.SWP_NOZORDER">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.WindowPositionFlags.SWP_NOZORDER">
             <summary>
-            <para>
-            维持当前 Z 序（忽略 hWndlnsertAfter 参数）
-            </para>
-                Retains the current Z order (ignores the hWndInsertAfter parameter).
+            Retains the current Z order (ignores hWndInsertAfter parameter).
             </summary>
         </member>
-        <member name="P:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.Rectangle.Width">
+        <member name="P:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.Rectangle.Width">
             <summary>
-            矩形的宽度
+            Rectangle width
             </summary>
         </member>
-        <member name="P:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.Rectangle.Height">
+        <member name="P:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.Rectangle.Height">
             <summary>
-            矩形的高度
+            Rectangle height
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.WindowStyles.WS_MAXIMIZE">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.WindowStyles.WS_MAXIMIZE">
             <summary>
-                The window is initially maximized.
+            The window is initially maximized.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.WindowStyles.WS_MAXIMIZEBOX">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.WindowStyles.WS_MAXIMIZEBOX">
             <summary>
-                The window has a maximize button. Cannot be combined with the WS_EX_CONTEXTHELP style. The WS_SYSMENU style must
-                also be specified.
+            The window has a maximize button. Cannot be combined with WS_EX_CONTEXTHELP. WS_SYSMENU must also be specified.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.WindowStyles.WS_MINIMIZE">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.WindowStyles.WS_MINIMIZE">
             <summary>
-                The window is initially minimized. Same as the WS_ICONIC style.
+            The window is initially minimized. Same as WS_ICONIC.
             </summary>
         </member>
-        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullScreenHelper.WindowStyles.WS_THICKFRAME">
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.FullscreenHelper.WindowStyles.WS_THICKFRAME">
             <summary>
-                The window has a sizing border. Same as the WS_SIZEBOX style.
+            The window has a sizing border. Same as WS_SIZEBOX.
             </summary>
         </member>
         <member name="T:iNKORE.UI.WPF.Modern.Controls.Primitives.BackRequestedEventArgs">
@@ -2472,6 +2446,13 @@
         <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar.BackRequestedEvent">
             <summary>
             Identifies the BackRequested routed event.
+            </summary>
+        </member>
+        <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar.ResizeBorderThicknessProperty">
+            <summary>
+            Identifies the ResizeBorderThickness attached property.
+            This is internal, because the user value will be overridden by the WindowHelper.
+            So you should better NOT use this property directly, but you can if you want to.
             </summary>
         </member>
         <member name="F:iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarControl.IsBackEnabledProperty">
@@ -3791,6 +3772,26 @@
         <member name="P:iNKORE.UI.WPF.Modern.Strings.ProofingMenuItemLabel">
             <summary>
               Looks up a localized string similar to Proofing.
+            </summary>
+        </member>
+        <member name="P:iNKORE.UI.WPF.Modern.Strings.TabViewAddButtonTooltip">
+            <summary>
+              Looks up a localized string similar to Add new tab.
+            </summary>
+        </member>
+        <member name="P:iNKORE.UI.WPF.Modern.Strings.TabViewCloseButtonTooltipWithKA">
+            <summary>
+              Looks up a localized string similar to Close tab (Ctrl + F4).
+            </summary>
+        </member>
+        <member name="P:iNKORE.UI.WPF.Modern.Strings.TabViewScrollDecreaseButtonTooltip">
+            <summary>
+              Looks up a localized string similar to Scroll tab list backward.
+            </summary>
+        </member>
+        <member name="P:iNKORE.UI.WPF.Modern.Strings.TabViewScrollIncreaseButtonTooltip">
+            <summary>
+              Looks up a localized string similar to Scroll tab list forward.
             </summary>
         </member>
         <member name="P:iNKORE.UI.WPF.Modern.Strings.TextCommandDescriptionBold">

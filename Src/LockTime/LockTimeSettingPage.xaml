@@ -56,9 +56,9 @@
                 </ui:SettingsExpander.Items>
             </ui:SettingsExpander>
 
-            <ui:HyperlinkButton Grid.Row="4" x:Name="AboutLockTime"  Margin="0,0,2,0" RaiseHyperlinkClicks="False" Content="关于时钟锁屏" />
-            <ui:HyperlinkButton Grid.Row="5" x:Name="CmdHelp"  Margin="0,0,2,0" RaiseHyperlinkClicks="False" Content="启动参数说明" />
-            <ui:HyperlinkButton Grid.Row="6" x:Name="BugReport" Margin="0,0,2,0" RaiseHyperlinkClicks="False" Content="反馈问题" />
+            <ui:HyperlinkButton Grid.Row="4" x:Name="AboutLockTime"  Margin="0,0,2,0" Content="关于时钟锁屏" />
+            <ui:HyperlinkButton Grid.Row="5" x:Name="CmdHelp"  Margin="0,0,2,0" Content="启动参数说明" />
+            <ui:HyperlinkButton Grid.Row="6" x:Name="BugReport" Margin="0,0,2,0" Content="反馈问题" />
         </Grid>
     </ScrollViewer>
 </Page>

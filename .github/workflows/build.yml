@@ -1,0 +1,43 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Verify dependency version
+        shell: pwsh
+        run: |
+          $dll = "Src/LockTime/Lib/iNKORE.UI.WPF.Modern.dll"
+          $name = [System.Reflection.AssemblyName]::GetAssemblyName($dll)
+          Write-Host "iNKORE.UI.WPF.Modern assembly version: $($name.Version)"
+          if ($name.Version -ne [version]"0.11.0.0") {
+            throw "Unexpected iNKORE.UI.WPF.Modern version: $($name.Version)"
+          }
+          $xaml = Get-ChildItem Src/LockTime -Filter *.xaml -Recurse
+          if (Select-String -Path $xaml -Pattern 'RaiseHyperlinkClicks' -Quiet) {
+            throw "RaiseHyperlinkClicks is removed in iNKORE.UI.WPF.Modern 0.11.0"
+          }
+
+      - name: Build Release
+        shell: pwsh
+        run: msbuild "Src\LockTime.sln" /m /nologo /v:minimal /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: LockTime-Release
+          path: Src/LockTime/bin/Release/
+          if-no-files-found: error
