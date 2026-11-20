@@ -613,14 +613,14 @@ Class LockTimeWindow
         Dim labelWidth As Double = MotionLabel.ActualWidth
         Dim labelHeight As Double = MotionLabel.ActualHeight
         If labelWidth <= 0 OrElse labelHeight <= 0 Then
-            MotionLabel.Measure(New Size(canvasWidth, canvasHeight))
+            MotionLabel.Measure(New System.Windows.Size(canvasWidth, canvasHeight))
             labelWidth = MotionLabel.DesiredSize.Width
             labelHeight = MotionLabel.DesiredSize.Height
         End If
         If labelWidth <= 0 Then Exit Sub
 
         '沿用普通时间标签当前的垂直位置，只做水平方向的动画
-        Dim baseY As Double = timelabel.TranslatePoint(New Point(0, 0), MotionCanvas).Y
+        Dim baseY As Double = timelabel.TranslatePoint(New System.Windows.Point(0, 0), MotionCanvas).Y
         Dim speed As Double = My.Application.MotionSpeed
         If speed < 20 Then speed = 240
 
