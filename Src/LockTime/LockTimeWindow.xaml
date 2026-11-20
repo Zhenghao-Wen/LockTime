@@ -42,6 +42,14 @@
                        FontWeight="{Binding FontWeight, ElementName=timelabel}"
                        Foreground="{Binding Foreground, ElementName=timelabel}"
                        TextAlignment="Center" />
+            <TextBlock x:Name="MotionDateLabel" Visibility="Collapsed"
+                       AutomationProperties.AutomationId="MotionDateLabel"
+                       FontFamily="{Binding FontFamily, ElementName=datelabel}"
+                       FontSize="{Binding FontSize, ElementName=datelabel}"
+                       FontStyle="{Binding FontStyle, ElementName=datelabel}"
+                       FontWeight="{Binding FontWeight, ElementName=datelabel}"
+                       Foreground="{Binding Foreground, ElementName=datelabel}"
+                       TextAlignment="Center" />
         </Canvas>
         <ui:CommandBar x:Name="CommandBar1" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" DockPanel.Dock="Bottom">
             <ui:AppBarButton  x:Name="Exitb"  Label="退出" FontSize="24" VerticalAlignment="Bottom" HorizontalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Click="Exitb_Click" ToolTipService.ToolTip="退出">

@@ -39,10 +39,18 @@ Class LockTimeWindow
     Dim Timer1 As New DispatcherTimer '更新时间的定时器
     Dim UpSettingTimer As New DispatcherTimer '定时更新设置定时器
     Dim MotionTimer As New DispatcherTimer '动态时间显示刷新定时器
-    Dim MotionPhase As Double '动态显示累计时间（秒）
+    Dim MotionClock As New Stopwatch '动态显示用的单调时钟，避免系统时间变化造成抖动
     Dim MotionAppliedStyle As Integer = -1 '当前已经应用的动态样式
-    Dim MotionLastTick As DateTime '上一帧时间
-    Dim MarqueeTextCopies As Integer = 1 '跑马灯文本重复份数
+    Dim MotionDistance As Double '已经移动的距离（像素）
+    Dim MotionLastElapsed As Double '上一帧的时钟读数
+    Dim MotionTextDirty As Boolean = True '动态文本需要重建
+    Dim MotionCanvasWidthCache As Double '上次构建文本时的画布宽度
+    Dim MotionTimeTextWidth As Double '单个时间文本宽度
+    Dim MotionDateTextWidth As Double '单个日期文本宽度
+    Dim MotionTimeTileWidth As Double '时间跑马灯一个文本块宽度
+    Dim MotionDateTileWidth As Double '日期跑马灯一个文本块宽度
+    Dim MotionTimeCopies As Integer = 1 '时间文本重复份数
+    Dim MotionDateCopies As Integer = 1 '日期文本重复份数
     'Public HideTextState As Integer
     'Delegate Sub HideTextStateSub(ByVal TextState As Integer)
 
@@ -561,6 +569,7 @@ Class LockTimeWindow
         Me.timelabel.FontSize = My.Application.TimeFontSize
         Me.datelabel.FontSize = My.Application.DateFontSize
         Me.datelabel.FontFamily = New System.Windows.Media.FontFamily(My.Application.DateFontName)
+        MotionTextDirty = True
     End Sub
 
     '更新显示颜色
@@ -585,29 +594,35 @@ Class LockTimeWindow
             MotionTimer.Stop()
             MotionCanvas.Visibility = Visibility.Collapsed
             MotionLabel.Visibility = Visibility.Collapsed
+            MotionDateLabel.Visibility = Visibility.Collapsed
             timelabel.Visibility = Visibility.Visible
+            datelabel.Visibility = Visibility.Visible
             MotionAppliedStyle = -1
             Exit Sub
         End If
 
         MotionCanvas.Visibility = Visibility.Visible
         MotionLabel.Visibility = Visibility.Visible
+        MotionDateLabel.Visibility = Visibility.Visible
         timelabel.Visibility = Visibility.Hidden
+        datelabel.Visibility = Visibility.Hidden
 
         If style <> MotionAppliedStyle Then
             MotionAppliedStyle = style
-            MotionPhase = 0
+            MotionDistance = 0
+            MotionTextDirty = True
         End If
 
-        UpdateMotionText()
+        If MotionTextDirty Then UpdateMotionText()
         UpdateMotionPosition()
         If Not MotionTimer.IsEnabled Then
-            MotionLastTick = DateTime.Now
+            MotionLastElapsed = 0
+            MotionClock.Restart()
             MotionTimer.Start()
         End If
     End Sub
 
-    '刷新动态时间的位置
+    '刷新动态时间和日期位置
     Private Sub UpdateMotionPosition()
         If MotionCanvas.Visibility <> Visibility.Visible Then Exit Sub
         If Not MotionCanvas.IsLoaded Then Exit Sub
@@ -616,54 +631,48 @@ Class LockTimeWindow
         Dim canvasHeight As Double = MotionCanvas.ActualHeight
         If canvasWidth <= 0 OrElse canvasHeight <= 0 Then Exit Sub
 
-        Dim labelWidth As Double = MotionLabel.ActualWidth
-        Dim labelHeight As Double = MotionLabel.ActualHeight
-        If labelWidth <= 0 OrElse labelHeight <= 0 Then
-            MotionLabel.Measure(New System.Windows.Size(canvasWidth, canvasHeight))
-            labelWidth = MotionLabel.DesiredSize.Width
-            labelHeight = MotionLabel.DesiredSize.Height
+        If Math.Abs(canvasWidth - MotionCanvasWidthCache) > 0.5 Then
+            MotionCanvasWidthCache = canvasWidth
+            MotionTextDirty = True
         End If
-        If labelWidth <= 0 Then Exit Sub
+        If MotionTextDirty Then UpdateMotionText()
+        If MotionTimeTileWidth <= 0 OrElse MotionDateTileWidth <= 0 Then Exit Sub
 
-        '沿用普通时间标签当前的垂直位置，只做水平方向的动画
-        Dim baseY As Double = timelabel.TranslatePoint(New System.Windows.Point(0, 0), MotionCanvas).Y
-        Dim speed As Double = My.Application.MotionSpeed
-        If speed < 20 Then speed = 240
+        '沿用普通标签当前的垂直位置，只做水平方向的动画
+        Dim timeY As Double = timelabel.TranslatePoint(New System.Windows.Point(0, 0), MotionCanvas).Y
+        Dim dateY As Double = datelabel.TranslatePoint(New System.Windows.Point(0, 0), MotionCanvas).Y
 
-        Dim targetX As Double = 0
+        Dim targetTimeX As Double = 0
+        Dim targetDateX As Double = 0
 
         If My.Application.MotionStyle = 1 Then
-            '跑马灯：使用重复文本形成连续长条，位移一个文本块宽度后无缝衔接
-            Dim tileWidth As Double = labelWidth / Math.Max(1, MarqueeTextCopies)
-            If tileWidth <= 0 Then Exit Sub
-            Dim distance As Double = MotionPhase * speed
-            distance = distance - Math.Floor(distance / tileWidth) * tileWidth
+            '跑马灯：时间和日期使用同样的速度与方向，各自无缝循环
+            Dim timeDistance As Double = MotionDistance - Math.Floor(MotionDistance / MotionTimeTileWidth) * MotionTimeTileWidth
+            Dim dateDistance As Double = MotionDistance - Math.Floor(MotionDistance / MotionDateTileWidth) * MotionDateTileWidth
             If My.Application.MotionDirection = 1 Then
-                targetX = -tileWidth + distance '向右
+                targetTimeX = -MotionTimeTileWidth + timeDistance '向右
+                targetDateX = -MotionDateTileWidth + dateDistance
             Else
-                targetX = -distance '向左
+                targetTimeX = -timeDistance '向左
+                targetDateX = -dateDistance
             End If
         ElseIf My.Application.MotionStyle = 2 Then
-            '左右摆动：以屏幕水平中心为基准做三角波往复，边界由反弹边距决定
+            '左右摆动：时间和日期保持中心对齐，按同一个偏移量同步摆动
             Dim margin As Double = My.Application.MotionMargin
             If margin < 0 Then margin = 0
             Dim minX As Double = margin
-            Dim maxX As Double = canvasWidth - labelWidth - margin
+            Dim maxX As Double = canvasWidth - MotionTimeTextWidth - margin
             If maxX < minX Then
-                Dim centerX As Double = (canvasWidth - labelWidth) / 2
+                Dim centerX As Double = (canvasWidth - MotionTimeTextWidth) / 2
                 minX = centerX
                 maxX = centerX
             End If
 
             Dim amplitude As Double = (maxX - minX) / 2
-            If amplitude <= 0.5 Then
-                targetX = minX
-            Else
-                Dim centerX As Double = (minX + maxX) / 2
-                Dim distance As Double = MotionPhase * speed
+            Dim offset As Double = 0
+            If amplitude > 0.5 Then
                 Dim cycle As Double = amplitude * 4
-                distance = distance - Math.Floor(distance / cycle) * cycle
-                Dim offset As Double
+                Dim distance As Double = MotionDistance - Math.Floor(MotionDistance / cycle) * cycle
                 If distance <= amplitude Then
                     offset = distance
                 ElseIf distance <= amplitude * 3 Then
@@ -671,50 +680,99 @@ Class LockTimeWindow
                 Else
                     offset = distance - cycle
                 End If
-                targetX = centerX + offset
             End If
+
+            Dim timeCenter As Double = (minX + maxX) / 2
+            targetTimeX = timeCenter + offset
+            targetDateX = (canvasWidth - MotionDateTextWidth) / 2 + offset
         End If
 
-        Canvas.SetLeft(MotionLabel, targetX)
-        Canvas.SetTop(MotionLabel, baseY)
+        Canvas.SetLeft(MotionLabel, targetTimeX)
+        Canvas.SetTop(MotionLabel, timeY)
+        Canvas.SetLeft(MotionDateLabel, targetDateX)
+        Canvas.SetTop(MotionDateLabel, dateY)
     End Sub
 
-    '构建跑马灯长条文本，并同步普通/动态文本
+    '构建动态时间和日期的显示文本
     Private Sub UpdateMotionText()
-        If My.Application.MotionStyle = 1 Then
-            Dim baseWidth As Double = timelabel.ActualWidth
-            If baseWidth <= 0 Then baseWidth = timelabel.DesiredSize.Width
-            Dim canvasWidth As Double = MotionCanvas.ActualWidth
-            If canvasWidth <= 0 Then canvasWidth = Me.ActualWidth
-            Dim copies As Integer = 8
-            If baseWidth > 0 AndAlso canvasWidth > 0 Then
-                copies = CInt(Math.Ceiling(canvasWidth / baseWidth)) + 2
-            End If
-            If copies < 2 Then copies = 2
-            If copies > 16 Then copies = 16
-            MarqueeTextCopies = copies
+        If MotionCanvas.Visibility <> Visibility.Visible Then Exit Sub
+        Dim canvasWidth As Double = MotionCanvas.ActualWidth
+        If canvasWidth <= 0 Then canvasWidth = Me.ActualWidth
+        If canvasWidth <= 0 Then Exit Sub
+        MotionCanvasWidthCache = canvasWidth
 
+        If My.Application.MotionStyle = 1 Then
             Dim separator As String = ChrW(&H2003) & ChrW(&H2003)
-            Dim sb As New System.Text.StringBuilder
-            For i As Integer = 1 To copies
-                sb.Append(timelabel.Text)
-                sb.Append(separator)
-            Next
-            MotionLabel.Text = sb.ToString()
+            Dim timeBase As Double = timelabel.ActualWidth
+            If timeBase <= 0 Then timeBase = timelabel.DesiredSize.Width
+            Dim dateBase As Double = datelabel.ActualWidth
+            If dateBase <= 0 Then dateBase = datelabel.DesiredSize.Width
+
+            Dim timeCopies As Integer = CalcMotionCopies(canvasWidth, timeBase)
+            Dim dateCopies As Integer = CalcMotionCopies(canvasWidth, dateBase)
+            MotionTimeCopies = timeCopies
+            MotionDateCopies = dateCopies
+            MotionLabel.Text = BuildMotionRibbon(timelabel.Text, separator, timeCopies)
+            MotionDateLabel.Text = BuildMotionRibbon(datelabel.Text, separator, dateCopies)
+
+            MotionLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
+            MotionDateLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
+            MotionTimeTextWidth = MotionLabel.DesiredSize.Width / timeCopies
+            MotionDateTextWidth = MotionDateLabel.DesiredSize.Width / dateCopies
+            Dim newTimeTile As Double = MotionLabel.DesiredSize.Width / timeCopies
+            Dim newDateTile As Double = MotionDateLabel.DesiredSize.Width / dateCopies
+            If MotionTimeTileWidth > 0.5 AndAlso newTimeTile > 0.5 Then
+                Dim phase As Double = MotionDistance - Math.Floor(MotionDistance / MotionTimeTileWidth) * MotionTimeTileWidth
+                MotionDistance = Math.Floor(MotionDistance / MotionTimeTileWidth) * newTimeTile + phase
+            End If
+            MotionTimeTileWidth = newTimeTile
+            MotionDateTileWidth = newDateTile
         Else
-            MarqueeTextCopies = 1
+            MotionTimeCopies = 1
+            MotionDateCopies = 1
             MotionLabel.Text = timelabel.Text
+            MotionDateLabel.Text = datelabel.Text
+            MotionLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
+            MotionDateLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
+            MotionTimeTextWidth = MotionLabel.DesiredSize.Width
+            MotionDateTextWidth = MotionDateLabel.DesiredSize.Width
+            MotionTimeTileWidth = MotionTimeTextWidth
+            MotionDateTileWidth = MotionDateTextWidth
         End If
+        MotionTextDirty = False
     End Sub
+
+    '计算跑马灯重复份数
+    Private Function CalcMotionCopies(canvasWidth As Double, baseWidth As Double) As Integer
+        Dim copies As Integer = 8
+        If baseWidth > 0 AndAlso canvasWidth > 0 Then
+            copies = CInt(Math.Ceiling(canvasWidth / baseWidth)) + 2
+        End If
+        If copies < 2 Then copies = 2
+        If copies > 16 Then copies = 16
+        Return copies
+    End Function
+
+    '构建一段首尾可无缝衔接的跑马灯文本
+    Private Function BuildMotionRibbon(text As String, separator As String, copies As Integer) As String
+        Dim sb As New System.Text.StringBuilder
+        For i As Integer = 1 To copies
+            sb.Append(text)
+            sb.Append(separator)
+        Next
+        Return sb.ToString()
+    End Function
 
     '动态时间显示定时器
     Private Sub MotionTimer_Tick()
-        Dim now As DateTime = DateTime.Now
-        Dim elapsed As Double = (now - MotionLastTick).TotalSeconds
-        MotionLastTick = now
+        Dim elapsedTotal As Double = MotionClock.Elapsed.TotalSeconds
+        Dim elapsed As Double = elapsedTotal - MotionLastElapsed
+        MotionLastElapsed = elapsedTotal
         If elapsed <= 0 Then Exit Sub
         If elapsed > 0.25 Then elapsed = 0.016
-        MotionPhase += elapsed
+        Dim speed As Double = My.Application.MotionSpeed
+        If speed < 20 Then speed = 240
+        MotionDistance += speed * elapsed
         UpdateMotionPosition()
     End Sub
 
@@ -870,8 +928,8 @@ Class LockTimeWindow
             End Try
             MessageBox.Show("格式化时间失败，已重置默认时间格式。", "错误", MessageBoxButton.OK, MessageBoxImage.Error)
         End Try
+        Dim timeChanged As Boolean = (timelabel.Text <> aa)
         timelabel.Text = aa
-        If My.Application.MotionStyle <> 0 Then UpdateMotionText()
         Dim a As String = ""
         Try
             a = Format(Now, My.Application.DateFormat)
@@ -884,8 +942,13 @@ Class LockTimeWindow
             End Try
             MessageBox.Show("格式化日期失败，已重置默认日期格式。", "错误", MessageBoxButton.OK, MessageBoxImage.Error)
         End Try
-        If a <> datelabel.Text Then
+        Dim dateChanged As Boolean = (a <> datelabel.Text)
+        If dateChanged Then
             datelabel.Text = a
+        End If
+        If (timeChanged OrElse dateChanged) AndAlso My.Application.MotionStyle <> 0 Then
+            MotionTextDirty = True
+            UpdateMotionText()
         End If
         a = Nothing
         aa = Nothing
