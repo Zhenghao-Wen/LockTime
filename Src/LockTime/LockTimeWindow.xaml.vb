@@ -569,6 +569,8 @@ Class LockTimeWindow
         Me.timelabel.FontSize = My.Application.TimeFontSize
         Me.datelabel.FontSize = My.Application.DateFontSize
         Me.datelabel.FontFamily = New System.Windows.Media.FontFamily(My.Application.DateFontName)
+        MotionTimeTextWidth = 0
+        MotionDateTextWidth = 0
         MotionTextDirty = True
     End Sub
 
@@ -610,6 +612,8 @@ Class LockTimeWindow
         If style <> MotionAppliedStyle Then
             MotionAppliedStyle = style
             MotionDistance = 0
+            MotionTimeTextWidth = 0
+            MotionDateTextWidth = 0
             MotionTextDirty = True
         End If
 
@@ -653,7 +657,7 @@ Class LockTimeWindow
             Else
                 targetTimeX = -timeDistance '向左
             End If
-            targetDateX = targetTimeX + (MotionTimeTextWidth - MotionDateTextWidth) / 2
+            targetDateX = targetTimeX
         ElseIf My.Application.MotionStyle = 2 Then
             '左右摆动：时间和日期保持中心对齐，按同一个偏移量同步摆动
             Dim margin As Double = My.Application.MotionMargin
@@ -715,8 +719,8 @@ Class LockTimeWindow
 
             MotionLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
             MotionDateLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
-            MotionTimeTextWidth = timeBase
-            MotionDateTextWidth = dateBase
+            If timeBase > MotionTimeTextWidth Then MotionTimeTextWidth = timeBase
+            If dateBase > MotionDateTextWidth Then MotionDateTextWidth = dateBase
             Dim newTimeTile As Double = MotionLabel.DesiredSize.Width / timeCopies
             Dim newDateTile As Double = MotionDateLabel.DesiredSize.Width / dateCopies
             If MotionTimeTileWidth > 0.5 AndAlso newTimeTile > 0.5 Then
@@ -732,8 +736,8 @@ Class LockTimeWindow
             MotionDateLabel.Text = datelabel.Text
             MotionLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
             MotionDateLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
-            MotionTimeTextWidth = MotionLabel.DesiredSize.Width
-            MotionDateTextWidth = MotionDateLabel.DesiredSize.Width
+            If MotionLabel.DesiredSize.Width > MotionTimeTextWidth Then MotionTimeTextWidth = MotionLabel.DesiredSize.Width
+            If MotionDateLabel.DesiredSize.Width > MotionDateTextWidth Then MotionDateTextWidth = MotionDateLabel.DesiredSize.Width
             MotionTimeTileWidth = MotionTimeTextWidth
             MotionDateTileWidth = MotionDateTextWidth
         End If
