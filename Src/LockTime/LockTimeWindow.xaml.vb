@@ -719,8 +719,8 @@ Class LockTimeWindow
 
             MotionLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
             MotionDateLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
-            If timeBase > MotionTimeTextWidth Then MotionTimeTextWidth = timeBase
-            If dateBase > MotionDateTextWidth Then MotionDateTextWidth = dateBase
+            If MotionTimeTextWidth <= 0 Then MotionTimeTextWidth = timeBase
+            If MotionDateTextWidth <= 0 Then MotionDateTextWidth = dateBase
             Dim newTimeTile As Double = MotionLabel.DesiredSize.Width / timeCopies
             Dim newDateTile As Double = MotionDateLabel.DesiredSize.Width / dateCopies
             If MotionTimeTileWidth > 0.5 AndAlso newTimeTile > 0.5 Then
@@ -736,8 +736,8 @@ Class LockTimeWindow
             MotionDateLabel.Text = datelabel.Text
             MotionLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
             MotionDateLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
-            If MotionLabel.DesiredSize.Width > MotionTimeTextWidth Then MotionTimeTextWidth = MotionLabel.DesiredSize.Width
-            If MotionDateLabel.DesiredSize.Width > MotionDateTextWidth Then MotionDateTextWidth = MotionDateLabel.DesiredSize.Width
+            If MotionTimeTextWidth <= 0 Then MotionTimeTextWidth = MotionLabel.DesiredSize.Width
+            If MotionDateTextWidth <= 0 Then MotionDateTextWidth = MotionDateLabel.DesiredSize.Width
             MotionTimeTileWidth = MotionTimeTextWidth
             MotionDateTileWidth = MotionDateTextWidth
         End If
