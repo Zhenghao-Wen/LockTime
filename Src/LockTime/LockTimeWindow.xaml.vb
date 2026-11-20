@@ -46,6 +46,7 @@ Class LockTimeWindow
     Dim MotionTextDirty As Boolean = True '动态文本需要重建
     Dim MotionTimeTextWidth As Double '时间文本参考宽度
     Dim MotionDateTextWidth As Double '日期文本参考宽度
+    Dim MotionClipRect As System.Windows.Rect = System.Windows.Rect.Empty '动态显示区域裁剪矩形
     'Public HideTextState As Integer
     'Delegate Sub HideTextStateSub(ByVal TextState As Integer)
 
@@ -590,6 +591,8 @@ Class LockTimeWindow
         If style <> 1 AndAlso style <> 2 Then
             MotionTimer.Stop()
             MotionCanvas.Visibility = Visibility.Collapsed
+            MotionCanvas.Clip = Nothing
+            MotionClipRect = System.Windows.Rect.Empty
             MotionLabel.Visibility = Visibility.Collapsed
             MotionDateLabel.Visibility = Visibility.Collapsed
             timelabel.Visibility = Visibility.Visible
@@ -632,6 +635,13 @@ Class LockTimeWindow
         '时间标签所在的 Grid 单元格就是当前的显示区域：居中时全屏，左/右时半屏
         Dim slot As System.Windows.Rect = System.Windows.Controls.Primitives.LayoutInformation.GetLayoutSlot(timelabel)
         If slot.Width <= 0 Then Exit Sub
+
+        '把动画限制在当前显示区域内：居中为全屏，左/右为半屏，避免跑马灯越界到另一半
+        Dim clipRect As New System.Windows.Rect(slot.X, 0, slot.Width, MotionCanvas.ActualHeight)
+        If MotionClipRect <> clipRect Then
+            MotionClipRect = clipRect
+            MotionCanvas.Clip = New RectangleGeometry(clipRect)
+        End If
 
         '沿用普通标签当前的垂直位置，只做水平方向的动画
         Dim timeY As Double = timelabel.TranslatePoint(New System.Windows.Point(0, 0), MotionCanvas).Y
