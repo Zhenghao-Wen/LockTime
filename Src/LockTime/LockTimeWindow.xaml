@@ -36,7 +36,6 @@
                 Panel.ZIndex="10" ClipToBounds="True" IsHitTestVisible="False" Visibility="Collapsed">
             <TextBlock x:Name="MotionLabel" Visibility="Collapsed"
                        AutomationProperties.AutomationId="MotionLabel"
-                       Text="{Binding Text, ElementName=timelabel}"
                        FontFamily="{Binding FontFamily, ElementName=timelabel}"
                        FontSize="{Binding FontSize, ElementName=timelabel}"
                        FontStyle="{Binding FontStyle, ElementName=timelabel}"
