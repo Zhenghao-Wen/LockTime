@@ -36,6 +36,7 @@
                 Panel.ZIndex="10" ClipToBounds="True" IsHitTestVisible="False" Visibility="Collapsed">
             <TextBlock x:Name="MotionLabel" Visibility="Collapsed"
                        AutomationProperties.AutomationId="MotionLabel"
+                       AutomationProperties.Name="{Binding Text, RelativeSource={RelativeSource Self}}"
                        FontFamily="{Binding FontFamily, ElementName=timelabel}"
                        FontSize="{Binding FontSize, ElementName=timelabel}"
                        FontStyle="{Binding FontStyle, ElementName=timelabel}"
@@ -44,6 +45,7 @@
                        TextAlignment="Center" />
             <TextBlock x:Name="MotionDateLabel" Visibility="Collapsed"
                        AutomationProperties.AutomationId="MotionDateLabel"
+                       AutomationProperties.Name="{Binding Text, RelativeSource={RelativeSource Self}}"
                        FontFamily="{Binding FontFamily, ElementName=datelabel}"
                        FontSize="{Binding FontSize, ElementName=datelabel}"
                        FontStyle="{Binding FontStyle, ElementName=datelabel}"
