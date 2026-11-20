@@ -29,6 +29,9 @@ Imports iNKORE.UI.WPF.Modern.Controls
 Imports Microsoft.Win32
 
 Class LockTimeThemePage
+    '动态时间显示控件初始化中，避免初始化时触发保存
+    Private MotionInitializing As Boolean = True
+
     '初始化页面
     Private Sub Page_Loaded(sender As Object, e As RoutedEventArgs)
         'IsEnterV = 0
@@ -136,6 +139,16 @@ Class LockTimeThemePage
         '设置显示格式初始化
         TimeFormatTextBox.Text = My.Application.TimeFormat
         DateFormatTextBox.Text = My.Application.DateFormat
+
+        '############################################################
+        '动态时间显示初始化
+        MotionInitializing = True
+        MotionStyleComboBox.SelectedIndex = Math.Max(0, Math.Min(2, My.Application.MotionStyle))
+        MotionDirectionComboBox.SelectedIndex = Math.Max(0, Math.Min(1, My.Application.MotionDirection))
+        MotionSpeedSlider.Value = Math.Max(20, Math.Min(800, My.Application.MotionSpeed))
+        MotionMarginSlider.Value = Math.Max(0, Math.Min(600, My.Application.MotionMargin))
+        MotionInitializing = False
+        UpdateMotionControls()
 
         '############################################################
         '初始化更新提示
@@ -520,5 +533,86 @@ Class LockTimeThemePage
                 My.Application.SettingsState = 1
             End If
         End If
+    End Sub
+
+    '更新动态时间显示控件的可用状态和数值文字
+    Private Sub UpdateMotionControls()
+        Dim style As Integer = My.Application.MotionStyle
+        MotionDirectionComboBox.IsEnabled = (style = 1)
+        MotionSpeedSlider.IsEnabled = (style <> 0)
+        MotionMarginSlider.IsEnabled = (style = 2)
+        MotionSpeedText.Text = CInt(Math.Round(My.Application.MotionSpeed)).ToString & " 像素/秒"
+        MotionMarginText.Text = CInt(Math.Round(My.Application.MotionMargin)).ToString & " 像素"
+    End Sub
+
+    '保存动态时间显示设置
+    Private Sub SaveMotionSettings()
+        Try
+            My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "MotionStyle", My.Application.MotionStyle, RegistryValueKind.DWord)
+        Catch ex As Exception
+        End Try
+        Try
+            My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "MotionDirection", My.Application.MotionDirection, RegistryValueKind.DWord)
+        Catch ex As Exception
+        End Try
+        Try
+            My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "MotionSpeed", CInt(Math.Round(My.Application.MotionSpeed)), RegistryValueKind.DWord)
+        Catch ex As Exception
+        End Try
+        Try
+            My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "MotionMargin", CInt(Math.Round(My.Application.MotionMargin)), RegistryValueKind.DWord)
+        Catch ex As Exception
+        End Try
+        My.Application.SettingsState = 1
+    End Sub
+
+    '动态样式
+    Private Sub MotionStyleComboBox_SelectionChanged(sender As Object, e As SelectionChangedEventArgs) Handles MotionStyleComboBox.SelectionChanged
+        If MotionInitializing Then Exit Sub
+        If MotionStyleComboBox.SelectedIndex < 0 Then Exit Sub
+        My.Application.MotionStyle = Math.Max(0, Math.Min(2, MotionStyleComboBox.SelectedIndex))
+        UpdateMotionControls()
+        SaveMotionSettings()
+    End Sub
+
+    '跑马灯方向
+    Private Sub MotionDirectionComboBox_SelectionChanged(sender As Object, e As SelectionChangedEventArgs) Handles MotionDirectionComboBox.SelectionChanged
+        If MotionInitializing Then Exit Sub
+        If MotionDirectionComboBox.SelectedIndex < 0 Then Exit Sub
+        My.Application.MotionDirection = Math.Max(0, Math.Min(1, MotionDirectionComboBox.SelectedIndex))
+        SaveMotionSettings()
+    End Sub
+
+    '移动速度
+    Private Sub MotionSpeedSlider_ValueChanged(sender As Object, e As RoutedPropertyChangedEventArgs(Of Double)) Handles MotionSpeedSlider.ValueChanged
+        If MotionInitializing Then Exit Sub
+        My.Application.MotionSpeed = CInt(Math.Round(MotionSpeedSlider.Value))
+        MotionSpeedText.Text = CInt(Math.Round(My.Application.MotionSpeed)).ToString & " 像素/秒"
+        SaveMotionSettings()
+    End Sub
+
+    '反弹边距
+    Private Sub MotionMarginSlider_ValueChanged(sender As Object, e As RoutedPropertyChangedEventArgs(Of Double)) Handles MotionMarginSlider.ValueChanged
+        If MotionInitializing Then Exit Sub
+        My.Application.MotionMargin = CInt(Math.Round(MotionMarginSlider.Value))
+        MotionMarginText.Text = CInt(Math.Round(My.Application.MotionMargin)).ToString & " 像素"
+        SaveMotionSettings()
+    End Sub
+
+    '恢复动态时间显示默认值
+    Private Sub ResetMotionButton_Click(sender As Object, e As RoutedEventArgs) Handles ResetMotionButton.Click
+        MotionInitializing = True
+        MotionStyleComboBox.SelectedIndex = 0
+        MotionDirectionComboBox.SelectedIndex = 0
+        MotionSpeedSlider.Value = 240
+        MotionMarginSlider.Value = 120
+        MotionInitializing = False
+
+        My.Application.MotionStyle = 0
+        My.Application.MotionDirection = 0
+        My.Application.MotionSpeed = 240
+        My.Application.MotionMargin = 120
+        UpdateMotionControls()
+        SaveMotionSettings()
     End Sub
 End Class

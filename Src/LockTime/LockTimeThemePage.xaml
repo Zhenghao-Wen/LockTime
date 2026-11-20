@@ -32,6 +32,10 @@
                 <RowDefinition></RowDefinition>
                 <RowDefinition></RowDefinition>
                 <RowDefinition></RowDefinition>
+
+                <RowDefinition></RowDefinition>
+                <RowDefinition></RowDefinition>
+                <RowDefinition></RowDefinition>
             </Grid.RowDefinitions>
 
             <ui:InfoBar x:Name="UpdateInfoBar" Severity="Warning" IsClosable="True" Margin="0,0,0,4" Visibility="Collapsed"
@@ -178,6 +182,42 @@
                     </ui:SettingsCard>
                     <ui:SettingsCard Description="" Header="" IsEnabled="True">
                         <Button x:Name="ResetColorButton" Content="重置" Margin="4,0,0,0" />
+                    </ui:SettingsCard>
+                </ui:SettingsExpander.Items>
+            </ui:SettingsExpander>
+
+            <ui:SettingsExpander Grid.Row="16" Grid.RowSpan="3" x:Name="MotionSettingsCard" Margin="0,0,0,4" Description="" Header="动态时间" IsEnabled="True">
+                <ui:SettingsExpander.HeaderIcon>
+                    <ui:FontIcon Glyph="&#xe895;"/>
+                </ui:SettingsExpander.HeaderIcon>
+                <ui:SettingsExpander.Items>
+                    <ui:SettingsCard Description="关闭、跑马灯或左右摆动" Header="动态样式" IsEnabled="True">
+                        <ComboBox x:Name="MotionStyleComboBox" SelectedIndex="0">
+                            <ComboBoxItem>关闭</ComboBoxItem>
+                            <ComboBoxItem>跑马灯</ComboBoxItem>
+                            <ComboBoxItem>左右摆动</ComboBoxItem>
+                        </ComboBox>
+                    </ui:SettingsCard>
+                    <ui:SettingsCard Description="跑马灯的移动方向" Header="移动方向" IsEnabled="True">
+                        <ComboBox x:Name="MotionDirectionComboBox" SelectedIndex="0">
+                            <ComboBoxItem>向左</ComboBoxItem>
+                            <ComboBoxItem>向右</ComboBoxItem>
+                        </ComboBox>
+                    </ui:SettingsCard>
+                    <ui:SettingsCard Description="数值越大移动越快（像素/秒）" Header="移动速度" IsEnabled="True">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Slider x:Name="MotionSpeedSlider" Width="220" Minimum="20" Maximum="800" Value="240" TickFrequency="10" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+                            <TextBlock x:Name="MotionSpeedText" Text="240 像素/秒" Margin="12,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ui:SettingsCard>
+                    <ui:SettingsCard Description="左右摆动时与屏幕边缘保持的最小距离（像素）" Header="反弹边距" IsEnabled="True">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Slider x:Name="MotionMarginSlider" Width="220" Minimum="0" Maximum="600" Value="120" TickFrequency="10" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+                            <TextBlock x:Name="MotionMarginText" Text="120 像素" Margin="12,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ui:SettingsCard>
+                    <ui:SettingsCard Description="恢复为关闭动态效果、向左移动、240 像素/秒、120 像素边距" Header="恢复默认" IsEnabled="True">
+                        <Button x:Name="ResetMotionButton" Content="重置" Margin="4,0,0,0" />
                     </ui:SettingsCard>
                 </ui:SettingsExpander.Items>
             </ui:SettingsExpander>

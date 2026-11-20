@@ -53,6 +53,11 @@ Class Application
     Public TimeColor As System.Drawing.Color
     '顶置
     Public AppTopMost As Integer
+    '动态时间显示
+    Public MotionStyle As Integer      '0=关闭 1=跑马灯 2=左右摆动
+    Public MotionDirection As Integer  '0=向左 1=向右（仅跑马灯）
+    Public MotionSpeed As Double       '像素/秒
+    Public MotionMargin As Double      '左右摆动时距屏幕边缘的反弹边距（像素）
     '更新提示内容
     Public UpdateSetting As Integer
     Public UpdateOK As Integer

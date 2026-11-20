@@ -38,6 +38,10 @@ Imports Newtonsoft.Json.Linq
 Class LockTimeWindow
     Dim Timer1 As New DispatcherTimer '更新时间的定时器
     Dim UpSettingTimer As New DispatcherTimer '定时更新设置定时器
+    Dim MotionTimer As New DispatcherTimer '动态时间显示刷新定时器
+    Dim MotionPhase As Double '动态显示累计时间（秒）
+    Dim MotionAppliedStyle As Integer = -1 '当前已经应用的动态样式
+    Dim MotionLastTick As DateTime '上一帧时间
     'Public HideTextState As Integer
     'Delegate Sub HideTextStateSub(ByVal TextState As Integer)
 
@@ -57,12 +61,15 @@ Class LockTimeWindow
         AddHandler Timer1.Tick, AddressOf Timer1_Tick '关联更新时间定时器事件
         UpSettingTimer.Interval = TimeSpan.FromMilliseconds(1000) '设置更新配置定时器间隔
         AddHandler UpSettingTimer.Tick, AddressOf UpSettingTimer_Tick '关联更新配置定时器事件
+        MotionTimer.Interval = TimeSpan.FromMilliseconds(16) '动态显示约 60 FPS
+        AddHandler MotionTimer.Tick, AddressOf MotionTimer_Tick
 
         AddHandler MyBase.Closing, AddressOf MainWindow_Closing '关联窗口关闭事件
         '启动定时器
         Timer1.Start()
         UpSettingTimer.Start()
         AppStartCmds(sender, e)  '处理启动命令行
+        SetUIMotion()            '应用动态时间显示设置
 
         If My.Application.UpdateSetting = 1 Then
             'Dispatcher.Invoke(AddressOf PrgGetUpdate, DispatcherPriority.Background)
@@ -438,6 +445,55 @@ Class LockTimeWindow
             Catch ex As Exception
             End Try
         End If
+
+        '动态时间显示
+        My.Application.MotionStyle = My.Computer.Registry.GetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "MotionStyle", -1)
+        If My.Application.MotionStyle < 0 Or My.Application.MotionStyle > 2 Then
+            My.Application.MotionStyle = 0
+            Try
+                My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "MotionStyle", 0, RegistryValueKind.DWord)
+            Catch ex As Exception
+            End Try
+        End If
+
+        My.Application.MotionDirection = My.Computer.Registry.GetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "MotionDirection", -1)
+        If My.Application.MotionDirection < 0 Or My.Application.MotionDirection > 1 Then
+            My.Application.MotionDirection = 0
+            Try
+                My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "MotionDirection", 0, RegistryValueKind.DWord)
+            Catch ex As Exception
+            End Try
+        End If
+
+        Dim motionSpeed As Object = My.Computer.Registry.GetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "MotionSpeed", -1)
+        Dim motionSpeedValue As Double = -1
+        Try
+            If motionSpeed IsNot Nothing Then motionSpeedValue = CDbl(motionSpeed)
+        Catch ex As Exception
+        End Try
+        If motionSpeedValue < 20 Or motionSpeedValue > 800 Then
+            motionSpeedValue = 240
+            Try
+                My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "MotionSpeed", 240, RegistryValueKind.DWord)
+            Catch ex As Exception
+            End Try
+        End If
+        My.Application.MotionSpeed = motionSpeedValue
+
+        Dim motionMargin As Object = My.Computer.Registry.GetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "MotionMargin", -1)
+        Dim motionMarginValue As Double = -1
+        Try
+            If motionMargin IsNot Nothing Then motionMarginValue = CDbl(motionMargin)
+        Catch ex As Exception
+        End Try
+        If motionMarginValue < 0 Or motionMarginValue > 600 Then
+            motionMarginValue = 120
+            Try
+                My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "MotionMargin", 120, RegistryValueKind.DWord)
+            Catch ex As Exception
+            End Try
+        End If
+        My.Application.MotionMargin = motionMarginValue
     End Sub
 #End Region
 
@@ -515,6 +571,117 @@ Class LockTimeWindow
         Else
             Me.Topmost = False
         End If
+    End Sub
+
+    '应用动态时间显示设置
+    Public Sub SetUIMotion()
+        Dim style As Integer = My.Application.MotionStyle
+        If style <> 1 AndAlso style <> 2 Then
+            MotionTimer.Stop()
+            MotionCanvas.Visibility = Visibility.Collapsed
+            MotionLabel.Visibility = Visibility.Collapsed
+            timelabel.Visibility = Visibility.Visible
+            MotionAppliedStyle = -1
+            Exit Sub
+        End If
+
+        MotionCanvas.Visibility = Visibility.Visible
+        MotionLabel.Visibility = Visibility.Visible
+        timelabel.Visibility = Visibility.Hidden
+
+        If style <> MotionAppliedStyle Then
+            MotionAppliedStyle = style
+            MotionPhase = 0
+        End If
+
+        UpdateMotionPosition()
+        If Not MotionTimer.IsEnabled Then
+            MotionLastTick = DateTime.Now
+            MotionTimer.Start()
+        End If
+    End Sub
+
+    '刷新动态时间的位置
+    Private Sub UpdateMotionPosition()
+        If MotionCanvas.Visibility <> Visibility.Visible Then Exit Sub
+        If Not MotionCanvas.IsLoaded Then Exit Sub
+
+        Dim canvasWidth As Double = MotionCanvas.ActualWidth
+        Dim canvasHeight As Double = MotionCanvas.ActualHeight
+        If canvasWidth <= 0 OrElse canvasHeight <= 0 Then Exit Sub
+
+        Dim labelWidth As Double = MotionLabel.ActualWidth
+        Dim labelHeight As Double = MotionLabel.ActualHeight
+        If labelWidth <= 0 OrElse labelHeight <= 0 Then
+            MotionLabel.Measure(New Size(canvasWidth, canvasHeight))
+            labelWidth = MotionLabel.DesiredSize.Width
+            labelHeight = MotionLabel.DesiredSize.Height
+        End If
+        If labelWidth <= 0 Then Exit Sub
+
+        '沿用普通时间标签当前的垂直位置，只做水平方向的动画
+        Dim baseY As Double = timelabel.TranslatePoint(New Point(0, 0), MotionCanvas).Y
+        Dim speed As Double = My.Application.MotionSpeed
+        If speed < 20 Then speed = 240
+
+        Dim targetX As Double = 0
+
+        If My.Application.MotionStyle = 1 Then
+            '跑马灯：从一侧完整移动到另一侧，首尾相接
+            Dim travel As Double = canvasWidth + labelWidth
+            If travel <= 0 Then Exit Sub
+            Dim distance As Double = MotionPhase * speed
+            distance = distance - Math.Floor(distance / travel) * travel
+            If My.Application.MotionDirection = 1 Then
+                targetX = -labelWidth + distance '向右
+            Else
+                targetX = canvasWidth - distance '向左
+            End If
+        ElseIf My.Application.MotionStyle = 2 Then
+            '左右摆动：以屏幕水平中心为基准做三角波往复，边界由反弹边距决定
+            Dim margin As Double = My.Application.MotionMargin
+            If margin < 0 Then margin = 0
+            Dim minX As Double = margin
+            Dim maxX As Double = canvasWidth - labelWidth - margin
+            If maxX < minX Then
+                Dim centerX As Double = (canvasWidth - labelWidth) / 2
+                minX = centerX
+                maxX = centerX
+            End If
+
+            Dim amplitude As Double = (maxX - minX) / 2
+            If amplitude <= 0.5 Then
+                targetX = minX
+            Else
+                Dim centerX As Double = (minX + maxX) / 2
+                Dim distance As Double = MotionPhase * speed
+                Dim cycle As Double = amplitude * 4
+                distance = distance - Math.Floor(distance / cycle) * cycle
+                Dim offset As Double
+                If distance <= amplitude Then
+                    offset = distance
+                ElseIf distance <= amplitude * 3 Then
+                    offset = amplitude * 2 - distance
+                Else
+                    offset = distance - cycle
+                End If
+                targetX = centerX + offset
+            End If
+        End If
+
+        Canvas.SetLeft(MotionLabel, targetX)
+        Canvas.SetTop(MotionLabel, baseY)
+    End Sub
+
+    '动态时间显示定时器
+    Private Sub MotionTimer_Tick()
+        Dim now As DateTime = DateTime.Now
+        Dim elapsed As Double = (now - MotionLastTick).TotalSeconds
+        MotionLastTick = now
+        If elapsed <= 0 Then Exit Sub
+        If elapsed > 0.25 Then elapsed = 0.016
+        MotionPhase += elapsed
+        UpdateMotionPosition()
     End Sub
 
 #End Region
@@ -696,6 +863,7 @@ Class LockTimeWindow
             SetUIFont()
             SetUIColor()
             SetUITopMost()
+            SetUIMotion()
             'If HideTextState = 1 Then
             '    Me.Dispatcher.Invoke(New HideTextStateSub(AddressOf SetUIText), 0)
             'Else
