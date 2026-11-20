@@ -98,6 +98,10 @@ Class LockTimeWindow
                 Call Rightb_Click(sender, e)
             ElseIf CurCommand(i) = "/hidetoolbar" Then
                 CommandBar1.Visibility = Visibility.Hidden
+            ElseIf CurCommand(i) = "/marquee" Then
+                My.Application.MotionStyle = 1
+            ElseIf CurCommand(i) = "/swing" Then
+                My.Application.MotionStyle = 2
             ElseIf CurCommand(i) = "/cleanupdate" Then
                 If System.IO.File.Exists(AppDomain.CurrentDomain.BaseDirectory & "LockTimeUpdateTmp.exe") Then
                     Try

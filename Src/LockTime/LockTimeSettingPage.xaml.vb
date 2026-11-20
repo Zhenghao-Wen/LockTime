@@ -71,7 +71,9 @@ Class LockTimeSettingPage
                         "/lefttext 在左侧显示时间" & vbCrLf &
                         "/righttext 在右侧显示时间" & vbCrLf &
                         "/windowmode 默认以窗口形式启动" & vbCrLf &
-                        "/hidetoolbar 默认隐藏底部工具栏" & vbCrLf & vbCrLf &
+                        "/hidetoolbar 默认隐藏底部工具栏" & vbCrLf &
+                        "/marquee 使用跑马灯动态时间" & vbCrLf &
+                        "/swing 使用左右摆动动态时间" & vbCrLf & vbCrLf &
                         "单击时间文本可以显示或隐藏底部工具栏。"
         dialog.Content = HelpPage
         Await dialog.ShowAsync()
