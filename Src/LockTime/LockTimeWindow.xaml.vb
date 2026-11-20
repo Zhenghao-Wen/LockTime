@@ -646,16 +646,14 @@ Class LockTimeWindow
         Dim targetDateX As Double = 0
 
         If My.Application.MotionStyle = 1 Then
-            '跑马灯：时间和日期使用同样的速度与方向，各自无缝循环
+            '跑马灯：日期沿用时间的位移，保证两者始终同步；日期在时间正下方居中
             Dim timeDistance As Double = MotionDistance - Math.Floor(MotionDistance / MotionTimeTileWidth) * MotionTimeTileWidth
-            Dim dateDistance As Double = MotionDistance - Math.Floor(MotionDistance / MotionDateTileWidth) * MotionDateTileWidth
             If My.Application.MotionDirection = 1 Then
                 targetTimeX = -MotionTimeTileWidth + timeDistance '向右
-                targetDateX = -MotionDateTileWidth + dateDistance
             Else
                 targetTimeX = -timeDistance '向左
-                targetDateX = -dateDistance
             End If
+            targetDateX = targetTimeX + (MotionTimeTextWidth - MotionDateTextWidth) / 2
         ElseIf My.Application.MotionStyle = 2 Then
             '左右摆动：时间和日期保持中心对齐，按同一个偏移量同步摆动
             Dim margin As Double = My.Application.MotionMargin
@@ -717,8 +715,8 @@ Class LockTimeWindow
 
             MotionLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
             MotionDateLabel.Measure(New System.Windows.Size(Double.PositiveInfinity, Double.PositiveInfinity))
-            MotionTimeTextWidth = MotionLabel.DesiredSize.Width / timeCopies
-            MotionDateTextWidth = MotionDateLabel.DesiredSize.Width / dateCopies
+            MotionTimeTextWidth = timeBase
+            MotionDateTextWidth = dateBase
             Dim newTimeTile As Double = MotionLabel.DesiredSize.Width / timeCopies
             Dim newDateTile As Double = MotionDateLabel.DesiredSize.Width / dateCopies
             If MotionTimeTileWidth > 0.5 AndAlso newTimeTile > 0.5 Then
