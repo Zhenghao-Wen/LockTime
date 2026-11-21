@@ -28,7 +28,7 @@ Public Class LockTimeAboutPage
     '初始化
     Private Sub AboutPage_Load() Handles MyBase.Initialized
         ver.Content = "时钟锁屏 版本：" & My.Application.Info.Version.ToString & vbCrLf &
-                      "版权所有 © 2023-2025 CJH。保留所有权利。"
+                      "版权所有 © 2023-2026 CJH。保留所有权利。"
         aboutmsg.Text = "本程序支持的命令行：" & vbCrLf &
                         "/fulltext 居中显示时间（默认）" & vbCrLf &
                         "/toptext 在顶部显示时间" & vbCrLf &
@@ -36,7 +36,9 @@ Public Class LockTimeAboutPage
                         "/lefttext 在左侧显示时间" & vbCrLf &
                         "/righttext 在右侧显示时间" & vbCrLf &
                         "/windowmode 默认以窗口形式启动" & vbCrLf &
-                        "/hidetoolbar 默认隐藏底部工具栏" & vbCrLf & vbCrLf &
+                        "/hidetoolbar 默认隐藏底部工具栏" & vbCrLf &
+                        "/marquee 使用跑马灯动态时间" & vbCrLf &
+                        "/swing 使用左右摆动动态时间" & vbCrLf & vbCrLf &
                         "单击时间文本可以显示或隐藏底部工具栏。"
         aboutmsg.IsReadOnly = True
         link.Content = "项目地址：" & vbCrLf &

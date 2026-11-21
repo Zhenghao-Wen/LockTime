@@ -15,7 +15,7 @@ Imports System.Windows
 <Assembly: AssemblyDescription("时钟锁屏")>
 <Assembly: AssemblyCompany("CJH")>
 <Assembly: AssemblyProduct("时钟锁屏")>
-<Assembly: AssemblyCopyright("Copyright © 2023-2025 CJH. All Rights Reserved.")>
+<Assembly: AssemblyCopyright("Copyright © 2023-2026 CJH. All Rights Reserved.")>
 <Assembly: AssemblyTrademark("")>
 <Assembly: ComVisible(false)>
 
@@ -55,5 +55,5 @@ Imports System.Windows
 ' 方法是按如下所示使用“*”: :
 ' <Assembly: AssemblyVersion("1.0.*")> 
 
-<Assembly: AssemblyVersion("2.0.2.25013")>
-<Assembly: AssemblyFileVersion("2.0.2.25013")>
+<Assembly: AssemblyVersion("2.1.0.26001")>
+<Assembly: AssemblyFileVersion("2.1.0.26001")>

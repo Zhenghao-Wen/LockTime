@@ -28,7 +28,7 @@ Public Class LockTimeVerPage
     '初始化
     Private Sub UserControl_Loaded(sender As Object, e As RoutedEventArgs)
         CopyrightText.Content = "时钟锁屏 版本：" & My.Application.Info.Version.ToString & vbCrLf &
-                                "版权所有 © 2023-2025 CJH。保留所有权利。" & vbCrLf &
+                                "版权所有 © 2023-2026 CJH。保留所有权利。" & vbCrLf &
                                 "基于GPL-3协议发布。"
         link.Content = "项目地址：" & vbCrLf &
                        "https://github.com/cjhdevact/LockTime"
