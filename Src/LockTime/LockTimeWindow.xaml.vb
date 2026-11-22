@@ -503,6 +503,16 @@ Class LockTimeWindow
             End Try
         End If
         My.Application.MotionMargin = motionMarginValue
+
+        '退出时是否确认
+        My.Application.ExitConfirm = My.Computer.Registry.GetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "ExitConfirm", -1)
+        If My.Application.ExitConfirm < 0 Or My.Application.ExitConfirm > 1 Then
+            My.Application.ExitConfirm = 1
+            Try
+                My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "ExitConfirm", 1, RegistryValueKind.DWord)
+            Catch ex As Exception
+            End Try
+        End If
     End Sub
 #End Region
 
@@ -1037,6 +1047,12 @@ Class LockTimeWindow
     End Sub
     '退出事件
     Private Async Sub MainWindow_Closing(sender As Object, e As ComponentModel.CancelEventArgs) 'Handles Me.Closing
+        If My.Application.ExitConfirm = 0 Then
+            '用户已关闭退出确认，直接关闭窗口
+            e.Cancel = False
+            Exit Sub
+        End If
+
         e.Cancel = True
         Dim dialog As ContentDialog = New ContentDialog()
         dialog.Title = "确定要退出时钟锁屏吗？"

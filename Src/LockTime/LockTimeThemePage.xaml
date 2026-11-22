@@ -60,7 +60,7 @@
                     </ComboBox>
                 </ui:SettingsCard>
                 <ui:SettingsCard Description="" Header="大小" IsEnabled="True">
-                        <ComboBox x:Name="TimeFontSizeComboBox" SelectedIndex="0" IsEditable="True">
+                        <ComboBox x:Name="TimeFontSizeComboBox" SelectedIndex="0" IsEditable="True" IsTextSearchEnabled="False">
                             <ComboBoxItem>8</ComboBoxItem>
                             <ComboBoxItem>9</ComboBoxItem>
                             <ComboBoxItem>10</ComboBoxItem>
@@ -105,7 +105,7 @@
                         </ComboBox>
                     </ui:SettingsCard>
                     <ui:SettingsCard Description="" Header="大小" IsEnabled="True">
-                        <ComboBox x:Name="DateFontSizeComboBox" SelectedIndex="0" IsEditable="True">
+                        <ComboBox x:Name="DateFontSizeComboBox" SelectedIndex="0" IsEditable="True" IsTextSearchEnabled="False">
                             <ComboBoxItem>8</ComboBoxItem>
                             <ComboBoxItem>9</ComboBoxItem>
                             <ComboBoxItem>10</ComboBoxItem>

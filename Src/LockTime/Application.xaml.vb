@@ -53,6 +53,8 @@ Class Application
     Public TimeColor As System.Drawing.Color
     '顶置
     Public AppTopMost As Integer
+    '退出时是否弹出确认对话框
+    Public ExitConfirm As Integer
     '动态时间显示
     Public MotionStyle As Integer      '0=关闭 1=跑马灯 2=左右摆动
     Public MotionDirection As Integer  '0=向左 1=向右（仅跑马灯）

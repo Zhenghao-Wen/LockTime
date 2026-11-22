@@ -244,36 +244,36 @@ Class LockTimeThemePage
         My.Application.SettingsState = 1
     End Sub
     '时间字体大小处理
-    'Dim IsEnterV As Integer
-    'Dim FontSizeV As Integer
     Public Sub TimeFontSizeComboBox_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
-        'MessageBox.Show(TimeFontSizeComboBox.SelectedIndex)
-        'If IsEnterV = 1 And TimeFontSizeComboBox.SelectedIndex = -1 Then
-        'IsEnterV = 0
+        ApplyTimeFontSize()
+    End Sub
+
+    '时间字号输入框失去焦点或回车时应用任意字号
+    Private Sub TimeFontSizeComboBox_LostFocus(sender As Object, e As RoutedEventArgs) Handles TimeFontSizeComboBox.LostFocus
+        ApplyTimeFontSize()
+    End Sub
+
+    Private Sub TimeFontSizeComboBox_KeyDown(sender As Object, e As KeyEventArgs) Handles TimeFontSizeComboBox.KeyDown
+        If e.Key = Key.Enter Then
+            ApplyTimeFontSize()
+            e.Handled = True
+        End If
+    End Sub
+
+    Private Sub ApplyTimeFontSize()
+        Dim size As Integer
+        If Not TryParseFontSize(TimeFontSizeComboBox.Text, size) Then
+            '输入无效时恢复当前字号，不强制改成预制值
+            TimeFontSizeComboBox.Text = My.Application.TimeFontSize.ToString()
+            Exit Sub
+        End If
+        TimeFontStylePreview.FontSize = size
+        My.Application.TimeFontSize = size
         Try
-            TimeFontStylePreview.FontSize = Replace(TimeFontSizeComboBox.SelectedValue.ToString, "System.Windows.Controls.ComboBoxItem: ", "")
-        Catch ex As Exception
-            'MessageBox.Show(TimeFontSizeComboBox.Text)
-            'MessageBox.Show(ex.Message & ex.ToString)
-            TimeFontStylePreview.FontSize = 96.0!
-            TimeFontSizeComboBox.SelectedIndex = 17
-        End Try
-        My.Application.TimeFontSize = TimeFontStylePreview.FontSize
-        Try
-            My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "TimeFontSize", My.Application.TimeFontSize, RegistryValueKind.DWord)
+            My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "TimeFontSize", size, RegistryValueKind.DWord)
         Catch ex As Exception
         End Try
         My.Application.SettingsState = 1
-        'ElseIf TimeFontSizeComboBox.SelectedIndex >= 0 Then
-        '    Try
-        '        FontStylePreview.FontSize = Replace(TimeFontSizeComboBox.SelectedValue.ToString, "System.Windows.Controls.ComboBoxItem: ", "")
-        '    Catch ex As Exception
-        '        MessageBox.Show(TimeFontSizeComboBox.Text)
-        '        MessageBox.Show(ex.Message & ex.ToString)
-        '        FontStylePreview.FontSize = 48.0
-        '        TimeFontSizeComboBox.SelectedIndex = 14
-        '    End Try
-        ' End If
     End Sub
     '重置时间字体
     Private Async Sub ResetTimeFormatButton_Click(sender As Object, e As RoutedEventArgs) Handles ResetTimeFormatButton.Click
@@ -356,19 +356,53 @@ Class LockTimeThemePage
     End Sub
     '日期字体大小处理
     Public Sub DateFontSizeComboBox_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
+        ApplyDateFontSize()
+    End Sub
+
+    '日期字号输入框失去焦点或回车时应用任意字号
+    Private Sub DateFontSizeComboBox_LostFocus(sender As Object, e As RoutedEventArgs) Handles DateFontSizeComboBox.LostFocus
+        ApplyDateFontSize()
+    End Sub
+
+    Private Sub DateFontSizeComboBox_KeyDown(sender As Object, e As KeyEventArgs) Handles DateFontSizeComboBox.KeyDown
+        If e.Key = Key.Enter Then
+            ApplyDateFontSize()
+            e.Handled = True
+        End If
+    End Sub
+
+    Private Sub ApplyDateFontSize()
+        Dim size As Integer
+        If Not TryParseFontSize(DateFontSizeComboBox.Text, size) Then
+            '输入无效时恢复当前字号，不强制改成预制值
+            DateFontSizeComboBox.Text = My.Application.DateFontSize.ToString()
+            Exit Sub
+        End If
+        DateFontStylePreview.FontSize = size
+        My.Application.DateFontSize = size
         Try
-            DateFontStylePreview.FontSize = Replace(DateFontSizeComboBox.SelectedValue.ToString, "System.Windows.Controls.ComboBoxItem: ", "")
-        Catch ex As Exception
-            DateFontStylePreview.FontSize = 36.0!
-            DateFontSizeComboBox.SelectedIndex = 13
-        End Try
-        My.Application.DateFontSize = DateFontStylePreview.FontSize
-        Try
-            My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "DateFontSize", My.Application.DateFontSize, RegistryValueKind.DWord)
+            My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "DateFontSize", size, RegistryValueKind.DWord)
         Catch ex As Exception
         End Try
         My.Application.SettingsState = 1
     End Sub
+
+    '解析字号输入，支持下拉项文本和任意数值
+    Private Function TryParseFontSize(text As String, ByRef size As Integer) As Boolean
+        Dim raw As String = text.Trim()
+        Const prefix As String = "System.Windows.Controls.ComboBoxItem: "
+        If raw.StartsWith(prefix) Then raw = raw.Substring(prefix.Length)
+        If raw.Length = 0 Then Return False
+
+        Dim value As Double
+        Dim ok As Boolean = Double.TryParse(raw, Globalization.NumberStyles.Float, Globalization.CultureInfo.CurrentCulture, value)
+        If Not ok Then ok = Double.TryParse(raw, Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture, value)
+        If ok AndAlso value >= 1 AndAlso value <= 1000 Then
+            size = CInt(Math.Round(value))
+            Return True
+        End If
+        Return False
+    End Function
     '应用日期、时间格式
     Private Sub ApplyFormatButton_Click(sender As Object, e As RoutedEventArgs) Handles ApplyFormatButton.Click
         My.Application.TimeFormat = TimeFormatTextBox.Text

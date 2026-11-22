@@ -46,6 +46,12 @@ Class LockTimeSettingPage
         Else
             CheckUpdateOp.IsOn = False
         End If
+
+        If My.Application.ExitConfirm = 1 Then
+            ExitConfirmToggleSwitch.IsOn = True
+        Else
+            ExitConfirmToggleSwitch.IsOn = False
+        End If
     End Sub
     '关于时钟锁屏
     Private Async Sub AboutLockTime_Click(sender As Object, e As RoutedEventArgs) Handles AboutLockTime.Click
@@ -82,6 +88,24 @@ Class LockTimeSettingPage
     Private Sub BugReport_Click(sender As Object, e As RoutedEventArgs) Handles BugReport.Click
         Process.Start("https://github.com/cjhdevact/LockTime/issues")
     End Sub
+    '退出时是否弹出确认对话框
+    Private Sub ExitConfirmToggleSwitch_Toggled(sender As Object, e As RoutedEventArgs) Handles ExitConfirmToggleSwitch.Toggled
+        If ExitConfirmToggleSwitch.IsOn Then
+            My.Application.ExitConfirm = 1
+            Try
+                My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "ExitConfirm", 1, RegistryValueKind.DWord)
+            Catch ex As Exception
+            End Try
+        Else
+            My.Application.ExitConfirm = 0
+            Try
+                My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\CJH\LockTime\2.0\Settings", "ExitConfirm", 0, RegistryValueKind.DWord)
+            Catch ex As Exception
+            End Try
+        End If
+        My.Application.SettingsState = 1
+    End Sub
+
     '是否顶置
     Private Sub TopMostTextToggleSwitch_Toggled(sender As Object, e As RoutedEventArgs) Handles TopMostTextToggleSwitch.Toggled
         If TopMostTextToggleSwitch.IsOn = True Then
