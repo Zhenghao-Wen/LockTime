@@ -44,6 +44,10 @@ Public Class LockTimeSettingWindow
             '在窗口显示前设置标题栏按钮可用性，确保模板加载时读取到
             iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar.SetMinimizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
             iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar.SetMaximizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
+            minimizeGuardTimer = New DispatcherTimer()
+            minimizeGuardTimer.Interval = TimeSpan.FromMilliseconds(200)
+            AddHandler minimizeGuardTimer.Tick, AddressOf MinimizeGuardTimer_Tick
+            minimizeGuardTimer.Start()
         End If
     End Sub
 
@@ -56,6 +60,7 @@ Public Class LockTimeSettingWindow
     Private Const SWP_FRAMECHANGED As Integer = &H20
     Private fullscreenHwndSource As System.Windows.Interop.HwndSource
     Private fullscreenHook As System.Windows.Interop.HwndSourceHook
+    Private minimizeGuardTimer As DispatcherTimer
 
     <DllImport("user32.dll")>
     Private Shared Function GetWindowLong(hWnd As IntPtr, nIndex As Integer) As Integer
@@ -68,6 +73,9 @@ Public Class LockTimeSettingWindow
     End Function
     <DllImport("user32.dll")>
     Private Shared Function ShowWindow(hWnd As IntPtr, nCmdShow As Integer) As Boolean
+    End Function
+    <DllImport("user32.dll")>
+    Private Shared Function IsIconic(hWnd As IntPtr) As Boolean
     End Function
 
     Protected Overrides Sub OnSourceInitialized(e As EventArgs)
@@ -107,7 +115,22 @@ Public Class LockTimeSettingWindow
         Return IntPtr.Zero
     End Function
 
+    Private Sub MinimizeGuardTimer_Tick()
+        If Not LockFullscreen Then Exit Sub
+        Dim handle As IntPtr = New System.Windows.Interop.WindowInteropHelper(Me).Handle
+        If handle <> IntPtr.Zero AndAlso IsIconic(handle) Then
+            ShowWindow(handle, 9) 'SW_RESTORE
+            Me.WindowState = WindowState.Normal
+            Me.Topmost = True
+            Me.Activate()
+        End If
+    End Sub
+
     Private Sub LockTimeSettingWindow_Closed(sender As Object, e As EventArgs) Handles MyBase.Closed
+        If minimizeGuardTimer IsNot Nothing Then
+            minimizeGuardTimer.Stop()
+            RemoveHandler minimizeGuardTimer.Tick, AddressOf MinimizeGuardTimer_Tick
+        End If
         If fullscreenHwndSource IsNot Nothing AndAlso fullscreenHook IsNot Nothing Then
             fullscreenHwndSource.RemoveHook(fullscreenHook)
             fullscreenHook = Nothing
