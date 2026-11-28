@@ -54,6 +54,8 @@ Public Class LockTimeSettingWindow
     Private Const SWP_NOMOVE As Integer = &H2
     Private Const SWP_NOZORDER As Integer = &H4
     Private Const SWP_FRAMECHANGED As Integer = &H20
+    Private fullscreenHwndSource As System.Windows.Interop.HwndSource
+    Private fullscreenHook As System.Windows.Interop.HwndSourceHook
 
     <DllImport("user32.dll")>
     Private Shared Function GetWindowLong(hWnd As IntPtr, nIndex As Integer) As Integer
@@ -67,7 +69,46 @@ Public Class LockTimeSettingWindow
 
     Protected Overrides Sub OnSourceInitialized(e As EventArgs)
         MyBase.OnSourceInitialized(e)
-        If LockFullscreen Then ApplyFullscreenLock()
+        If LockFullscreen Then
+            ApplyFullscreenLock()
+            Dim handle As IntPtr = New System.Windows.Interop.WindowInteropHelper(Me).Handle
+            fullscreenHwndSource = System.Windows.Interop.HwndSource.FromHwnd(handle)
+            If fullscreenHwndSource IsNot Nothing Then
+                fullscreenHook = New System.Windows.Interop.HwndSourceHook(AddressOf FullscreenWndProc)
+                fullscreenHwndSource.AddHook(fullscreenHook)
+            End If
+        End If
+    End Sub
+
+    '拦截最小化命令与最小化消息，保证全屏设置窗口不会被最小化
+    Private Function FullscreenWndProc(hwnd As IntPtr, msg As Integer, wParam As IntPtr, lParam As IntPtr, ByRef handled As Boolean) As IntPtr
+        Const WM_SYSCOMMAND As Integer = &H112
+        Const SC_MINIMIZE As Integer = &HF020
+        Const WM_SIZE As Integer = &H5
+        Const SIZE_MINIMIZED As Integer = 1
+        If LockFullscreen Then
+            If msg = WM_SYSCOMMAND AndAlso (wParam.ToInt64() And &HFFF0) = SC_MINIMIZE Then
+                handled = True
+                Return IntPtr.Zero
+            End If
+            If msg = WM_SIZE AndAlso wParam.ToInt64() = SIZE_MINIMIZED Then
+                Me.Dispatcher.BeginInvoke(New Action(Sub()
+                                                        If Me.WindowState = WindowState.Minimized Then
+                                                            Me.WindowState = WindowState.Normal
+                                                            Me.Topmost = True
+                                                            Me.Activate()
+                                                        End If
+                                                    End Sub))
+            End If
+        End If
+        Return IntPtr.Zero
+    End Function
+
+    Private Sub LockTimeSettingWindow_Closed(sender As Object, e As EventArgs) Handles MyBase.Closed
+        If fullscreenHwndSource IsNot Nothing AndAlso fullscreenHook IsNot Nothing Then
+            fullscreenHwndSource.RemoveHook(fullscreenHook)
+            fullscreenHook = Nothing
+        End If
     End Sub
 
     Private Sub LockTimeSettingWindow_LoadedLock(sender As Object, e As RoutedEventArgs) Handles MyBase.Loaded
