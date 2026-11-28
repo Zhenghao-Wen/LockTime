@@ -24,6 +24,7 @@
 '*     Settings window.                                *
 '*                                                     *
 '\*****************************************************/
+Imports System.Runtime.InteropServices
 Imports System.Windows.Threading
 Imports iNKORE.UI.WPF.Modern.Controls
 Imports Page = iNKORE.UI.WPF.Modern.Controls.Page
@@ -34,14 +35,47 @@ Public Class LockTimeSettingWindow
     '是否从全屏主窗口打开：此时设置窗口始终置顶且不允许最小化
     Public LockFullscreen As Boolean = False
 
+    Private Const GWL_STYLE As Integer = -16
+    Private Const WS_MINIMIZEBOX As Integer = &H20000
+    Private Const WS_MAXIMIZEBOX As Integer = &H10000
+    Private Const SWP_NOSIZE As Integer = &H1
+    Private Const SWP_NOMOVE As Integer = &H2
+    Private Const SWP_NOZORDER As Integer = &H4
+    Private Const SWP_FRAMECHANGED As Integer = &H20
+
+    <DllImport("user32.dll")>
+    Private Shared Function GetWindowLong(hWnd As IntPtr, nIndex As Integer) As Integer
+    End Function
+    <DllImport("user32.dll")>
+    Private Shared Function SetWindowLong(hWnd As IntPtr, nIndex As Integer, dwNewLong As Integer) As Integer
+    End Function
+    <DllImport("user32.dll")>
+    Private Shared Function SetWindowPos(hWnd As IntPtr, hWndInsertAfter As IntPtr, X As Integer, Y As Integer, cx As Integer, cy As Integer, uFlags As Integer) As Boolean
+    End Function
+
     Protected Overrides Sub OnSourceInitialized(e As EventArgs)
         MyBase.OnSourceInitialized(e)
-        If LockFullscreen Then
-            Me.Topmost = True
-            Me.ResizeMode = ResizeMode.NoResize
-            '隐藏自定义标题栏的最小化/最大化按钮
-            iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar.SetMinimizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
-            iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar.SetMaximizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
+        If LockFullscreen Then ApplyFullscreenLock()
+    End Sub
+
+    Private Sub LockTimeSettingWindow_Loaded(sender As Object, e As RoutedEventArgs) Handles MyBase.Loaded
+        If LockFullscreen Then ApplyFullscreenLock()
+    End Sub
+
+    Private Sub ApplyFullscreenLock()
+        Me.Topmost = True
+        Me.ResizeMode = ResizeMode.NoResize
+        '隐藏自定义标题栏的最小化/最大化按钮
+        iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar.SetMinimizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
+        iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar.SetMaximizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
+        'ResizeMode 不一定能完全移除系统样式，这里再显式去掉最小化/最大化框
+        Dim handle As IntPtr = New System.Windows.Interop.WindowInteropHelper(Me).Handle
+        If handle <> IntPtr.Zero Then
+            Dim style As Integer = GetWindowLong(handle, GWL_STYLE)
+            style = style And Not WS_MINIMIZEBOX
+            style = style And Not WS_MAXIMIZEBOX
+            SetWindowLong(handle, GWL_STYLE, style)
+            SetWindowPos(handle, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOZORDER Or SWP_FRAMECHANGED)
         End If
     End Sub
 
