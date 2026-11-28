@@ -66,6 +66,9 @@ Public Class LockTimeSettingWindow
     <DllImport("user32.dll")>
     Private Shared Function SetWindowPos(hWnd As IntPtr, hWndInsertAfter As IntPtr, X As Integer, Y As Integer, cx As Integer, cy As Integer, uFlags As Integer) As Boolean
     End Function
+    <DllImport("user32.dll")>
+    Private Shared Function ShowWindow(hWnd As IntPtr, nCmdShow As Integer) As Boolean
+    End Function
 
     Protected Overrides Sub OnSourceInitialized(e As EventArgs)
         MyBase.OnSourceInitialized(e)
@@ -92,12 +95,12 @@ Public Class LockTimeSettingWindow
                 Return IntPtr.Zero
             End If
             If msg = WM_SIZE AndAlso wParam.ToInt64() = SIZE_MINIMIZED Then
+                Dim windowHandle As IntPtr = hwnd
                 Me.Dispatcher.BeginInvoke(New Action(Sub()
-                                                        If Me.WindowState = WindowState.Minimized Then
-                                                            Me.WindowState = WindowState.Normal
-                                                            Me.Topmost = True
-                                                            Me.Activate()
-                                                        End If
+                                                        ShowWindow(windowHandle, 9) 'SW_RESTORE
+                                                        Me.WindowState = WindowState.Normal
+                                                        Me.Topmost = True
+                                                        Me.Activate()
                                                     End Sub))
             End If
         End If
@@ -134,6 +137,8 @@ Public Class LockTimeSettingWindow
 
     Private Sub LockTimeSettingWindow_StateChanged(sender As Object, e As EventArgs) Handles MyBase.StateChanged
         If LockFullscreen AndAlso Me.WindowState = WindowState.Minimized Then
+            Dim handle As IntPtr = New System.Windows.Interop.WindowInteropHelper(Me).Handle
+            If handle <> IntPtr.Zero Then ShowWindow(handle, 9) 'SW_RESTORE
             Me.WindowState = WindowState.Normal
             Me.Topmost = True
             Me.Activate()
