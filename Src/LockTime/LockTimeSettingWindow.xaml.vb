@@ -35,6 +35,18 @@ Public Class LockTimeSettingWindow
     '是否从全屏主窗口打开：此时设置窗口始终置顶且不允许最小化
     Public LockFullscreen As Boolean = False
 
+    Public Sub New(lockFullscreen As Boolean)
+        InitializeComponent()
+        LockFullscreen = lockFullscreen
+        If lockFullscreen Then
+            Me.Topmost = True
+            Me.ResizeMode = ResizeMode.NoResize
+            '在窗口显示前设置标题栏按钮可用性，确保模板加载时读取到
+            iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar.SetMinimizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
+            iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar.SetMaximizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
+        End If
+    End Sub
+
     Private Const GWL_STYLE As Integer = -16
     Private Const WS_MINIMIZEBOX As Integer = &H20000
     Private Const WS_MAXIMIZEBOX As Integer = &H10000
