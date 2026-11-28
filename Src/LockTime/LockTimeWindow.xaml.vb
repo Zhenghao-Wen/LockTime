@@ -38,15 +38,18 @@ Imports Newtonsoft.Json.Linq
 Class LockTimeWindow
     Dim Timer1 As New DispatcherTimer '更新时间的定时器
     Dim UpSettingTimer As New DispatcherTimer '定时更新设置定时器
-    Dim MotionTimer As New DispatcherTimer '动态时间显示刷新定时器
-    Dim MotionClock As New Stopwatch '动态显示用的单调时钟，避免系统时间变化造成抖动
     Dim MotionAppliedStyle As Integer = -1 '当前已经应用的动态样式
     Dim MotionDistance As Double '已经移动的距离（像素）
-    Dim MotionLastElapsed As Double '上一帧的时钟读数
     Dim MotionTextDirty As Boolean = True '动态文本需要重建
     Dim MotionTimeTextWidth As Double '时间文本参考宽度
     Dim MotionDateTextWidth As Double '日期文本参考宽度
     Dim MotionClipRect As System.Windows.Rect = System.Windows.Rect.Empty '动态显示区域裁剪矩形
+    Dim MotionRenderingHooked As Boolean = False '是否已挂接 CompositionTarget.Rendering
+    Dim MotionLastRenderTime As Double = -1 '上一渲染帧时间（秒）
+    Dim MotionLayoutDirty As Boolean = True '布局信息需要刷新
+    Dim MotionSlotRect As System.Windows.Rect '当前显示区域
+    Dim MotionTimeBaseY As Double '时间标签基准 Y
+    Dim MotionDateBaseY As Double '日期标签基准 Y
     'Public HideTextState As Integer
     'Delegate Sub HideTextStateSub(ByVal TextState As Integer)
 
@@ -66,9 +69,6 @@ Class LockTimeWindow
         AddHandler Timer1.Tick, AddressOf Timer1_Tick '关联更新时间定时器事件
         UpSettingTimer.Interval = TimeSpan.FromMilliseconds(1000) '设置更新配置定时器间隔
         AddHandler UpSettingTimer.Tick, AddressOf UpSettingTimer_Tick '关联更新配置定时器事件
-        MotionTimer.Interval = TimeSpan.FromMilliseconds(16) '动态显示约 60 FPS
-        AddHandler MotionTimer.Tick, AddressOf MotionTimer_Tick
-
         AddHandler MyBase.Closing, AddressOf MainWindow_Closing '关联窗口关闭事件
         '启动定时器
         Timer1.Start()
@@ -578,6 +578,7 @@ Class LockTimeWindow
         MotionTimeTextWidth = 0
         MotionDateTextWidth = 0
         MotionTextDirty = True
+        MotionLayoutDirty = True
     End Sub
 
     '更新显示颜色
@@ -599,7 +600,7 @@ Class LockTimeWindow
     Public Sub SetUIMotion()
         Dim style As Integer = My.Application.MotionStyle
         If style <> 1 AndAlso style <> 2 Then
-            MotionTimer.Stop()
+            StopMotionRendering()
             MotionCanvas.Visibility = Visibility.Collapsed
             MotionCanvas.Clip = Nothing
             MotionClipRect = System.Windows.Rect.Empty
@@ -608,6 +609,7 @@ Class LockTimeWindow
             timelabel.Visibility = Visibility.Visible
             datelabel.Visibility = Visibility.Visible
             MotionAppliedStyle = -1
+            MotionLayoutDirty = True
             Exit Sub
         End If
 
@@ -623,47 +625,57 @@ Class LockTimeWindow
             MotionTimeTextWidth = 0
             MotionDateTextWidth = 0
             MotionTextDirty = True
+            MotionLayoutDirty = True
         End If
 
         If MotionTextDirty Then UpdateMotionText()
+        If MotionLayoutDirty Then RefreshMotionLayout()
         UpdateMotionPosition()
-        If Not MotionTimer.IsEnabled Then
-            MotionLastElapsed = 0
-            MotionClock.Restart()
-            MotionTimer.Start()
-        End If
+        StartMotionRendering()
     End Sub
 
-    '刷新动态时间和日期位置
-    Private Sub UpdateMotionPosition()
+    '刷新一次布局信息（显示区域、基准位置、裁剪），避免逐帧查询布局
+    Private Sub RefreshMotionLayout()
         If MotionCanvas.Visibility <> Visibility.Visible Then Exit Sub
         If Not MotionCanvas.IsLoaded Then Exit Sub
+        If MotionCanvas.ActualHeight <= 0 Then Exit Sub
 
-        If MotionTextDirty Then UpdateMotionText()
-        If MotionTimeTextWidth <= 0 OrElse MotionDateTextWidth <= 0 Then Exit Sub
-
-        '时间标签所在的 Grid 单元格就是当前的显示区域：居中时全屏，左/右时半屏
         Dim slot As System.Windows.Rect = System.Windows.Controls.Primitives.LayoutInformation.GetLayoutSlot(timelabel)
         If slot.Width <= 0 Then Exit Sub
 
-        '把动画限制在当前显示区域内：居中为全屏，左/右为半屏，避免跑马灯越界到另一半
+        MotionSlotRect = slot
+        MotionTimeBaseY = timelabel.TranslatePoint(New System.Windows.Point(0, 0), MotionCanvas).Y
+        MotionDateBaseY = datelabel.TranslatePoint(New System.Windows.Point(0, 0), MotionCanvas).Y
+
+        '把动画限制在当前显示区域内：居中为全屏，左/右为半屏
         Dim clipRect As New System.Windows.Rect(slot.X, 0, slot.Width, MotionCanvas.ActualHeight)
         If MotionClipRect <> clipRect Then
             MotionClipRect = clipRect
             MotionCanvas.Clip = New RectangleGeometry(clipRect)
         End If
 
-        '沿用普通标签当前的垂直位置，只做水平方向的动画
-        Dim timeY As Double = timelabel.TranslatePoint(New System.Windows.Point(0, 0), MotionCanvas).Y
-        Dim dateY As Double = datelabel.TranslatePoint(New System.Windows.Point(0, 0), MotionCanvas).Y
+        '垂直基准只在布局变化时设置；水平位置每帧更新
+        Canvas.SetTop(MotionLabel, MotionTimeBaseY)
+        Canvas.SetTop(MotionDateLabel, MotionDateBaseY)
+        MotionLayoutDirty = False
+    End Sub
+
+    '刷新动态时间和日期位置（只更新渲染变换）
+    Private Sub UpdateMotionPosition()
+        If MotionCanvas.Visibility <> Visibility.Visible Then Exit Sub
+        If Not MotionCanvas.IsLoaded Then Exit Sub
+        If MotionTextDirty Then UpdateMotionText()
+        If MotionLayoutDirty Then RefreshMotionLayout()
+        If MotionLayoutDirty Then Exit Sub
+        If MotionTimeTextWidth <= 0 OrElse MotionDateTextWidth <= 0 Then Exit Sub
+
+        Dim slot As System.Windows.Rect = MotionSlotRect
         Dim timeWidth As Double = MotionTimeTextWidth
         Dim dateWidth As Double = MotionDateTextWidth
-
         Dim targetTimeX As Double = 0
         Dim targetDateX As Double = 0
 
         If My.Application.MotionStyle = 1 Then
-            '跑马灯：只显示一个时间/日期对象，在显示区域内从一侧移动到另一侧
             Dim travel As Double = slot.Width + timeWidth
             If travel <= 0 Then Exit Sub
             Dim distance As Double = MotionDistance - Math.Floor(MotionDistance / travel) * travel
@@ -675,13 +687,12 @@ Class LockTimeWindow
             End If
             targetTimeX = slot.X + localX
         ElseIf My.Application.MotionStyle = 2 Then
-            '左右摆动：在显示区域内以中心为基准往复，日期始终在时间下方居中
             Dim margin As Double = My.Application.MotionMargin
             If margin < 0 Then margin = 0
             Dim minX As Double = slot.X + margin
             Dim maxX As Double = slot.X + slot.Width - timeWidth - margin
             If maxX < minX Then
-                Dim centerX As Double = slot.X + (slot.Width - timeWidth) / 2
+                Dim centerX As Double = (slot.X + (slot.Width - timeWidth) / 2)
                 minX = centerX
                 maxX = centerX
             End If
@@ -703,13 +714,9 @@ Class LockTimeWindow
             targetTimeX = (minX + maxX) / 2 + offset
         End If
 
-        '日期中心与时间中心保持一致
         targetDateX = targetTimeX + (timeWidth - dateWidth) / 2
-
         Canvas.SetLeft(MotionLabel, targetTimeX)
-        Canvas.SetTop(MotionLabel, timeY)
         Canvas.SetLeft(MotionDateLabel, targetDateX)
-        Canvas.SetTop(MotionDateLabel, dateY)
     End Sub
 
     '同步动态时间和日期的显示文本
@@ -724,17 +731,52 @@ Class LockTimeWindow
         MotionTextDirty = False
     End Sub
 
-    '动态时间显示定时器
-    Private Sub MotionTimer_Tick()
-        Dim elapsedTotal As Double = MotionClock.Elapsed.TotalSeconds
-        Dim elapsed As Double = elapsedTotal - MotionLastElapsed
-        MotionLastElapsed = elapsedTotal
+    '使用 CompositionTarget.Rendering 与显示器刷新同步，避免 DispatcherTimer 抖动
+    Private Sub StartMotionRendering()
+        If Not MotionRenderingHooked Then
+            AddHandler CompositionTarget.Rendering, AddressOf CompositionTarget_Rendering
+            MotionRenderingHooked = True
+            MotionLastRenderTime = -1
+        End If
+    End Sub
+
+    Private Sub StopMotionRendering()
+        If MotionRenderingHooked Then
+            RemoveHandler CompositionTarget.Rendering, AddressOf CompositionTarget_Rendering
+            MotionRenderingHooked = False
+            MotionLastRenderTime = -1
+        End If
+    End Sub
+
+    Private Sub CompositionTarget_Rendering(sender As Object, e As EventArgs)
+        Dim args As RenderingEventArgs = TryCast(e, RenderingEventArgs)
+        If args Is Nothing Then Exit Sub
+        Dim now As Double = args.RenderingTime.TotalSeconds
+        If MotionLastRenderTime < 0 Then
+            MotionLastRenderTime = now
+            Exit Sub
+        End If
+        Dim elapsed As Double = now - MotionLastRenderTime
+        MotionLastRenderTime = now
         If elapsed <= 0 Then Exit Sub
         If elapsed > 0.25 Then elapsed = 0.016
         Dim speed As Double = My.Application.MotionSpeed
         If speed < 20 Then speed = 240
         MotionDistance += speed * elapsed
         UpdateMotionPosition()
+    End Sub
+
+    '布局/尺寸变化时才刷新基准信息
+    Private Sub MotionCanvas_SizeChanged(sender As Object, e As SizeChangedEventArgs) Handles MotionCanvas.SizeChanged
+        MotionLayoutDirty = True
+    End Sub
+
+    Private Sub MotionLabels_LayoutUpdated(sender As Object, e As EventArgs) Handles timelabel.LayoutUpdated, datelabel.LayoutUpdated
+        If MotionAppliedStyle = 1 OrElse MotionAppliedStyle = 2 Then MotionLayoutDirty = True
+    End Sub
+
+    Private Sub MainWindow_Closed(sender As Object, e As EventArgs) Handles MyBase.Closed
+        StopMotionRendering()
     End Sub
 
 #End Region
