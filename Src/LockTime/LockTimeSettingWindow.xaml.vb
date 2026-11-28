@@ -58,7 +58,7 @@ Public Class LockTimeSettingWindow
         If LockFullscreen Then ApplyFullscreenLock()
     End Sub
 
-    Private Sub LockTimeSettingWindow_Loaded(sender As Object, e As RoutedEventArgs) Handles MyBase.Loaded
+    Private Sub LockTimeSettingWindow_LoadedLock(sender As Object, e As RoutedEventArgs) Handles MyBase.Loaded
         If LockFullscreen Then ApplyFullscreenLock()
     End Sub
 
