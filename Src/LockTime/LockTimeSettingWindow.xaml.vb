@@ -40,9 +40,8 @@ Public Class LockTimeSettingWindow
             Me.Topmost = True
             Me.ResizeMode = ResizeMode.NoResize
             '隐藏自定义标题栏的最小化/最大化按钮
-            Dim titleBar = iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar
-            titleBar.SetMinimizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
-            titleBar.SetMaximizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
+            iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar.SetMinimizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
+            iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar.SetMaximizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
         End If
     End Sub
 
