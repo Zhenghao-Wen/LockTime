@@ -31,6 +31,28 @@ Public Class LockTimeSettingWindow
     Public Page_About As LockTimeAboutPage = New LockTimeAboutPage()
     Public Page_Setting As LockTimeSettingPage = New LockTimeSettingPage()
     Public Page_Theme As LockTimeThemePage = New LockTimeThemePage()
+    '是否从全屏主窗口打开：此时设置窗口始终置顶且不允许最小化
+    Public LockFullscreen As Boolean = False
+
+    Protected Overrides Sub OnSourceInitialized(e As EventArgs)
+        MyBase.OnSourceInitialized(e)
+        If LockFullscreen Then
+            Me.Topmost = True
+            Me.ResizeMode = ResizeMode.NoResize
+            '隐藏自定义标题栏的最小化/最大化按钮
+            Dim titleBar = iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBar
+            titleBar.SetMinimizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
+            titleBar.SetMaximizeButtonAvailability(Me, iNKORE.UI.WPF.Modern.Controls.Primitives.TitleBarButtonAvailability.Collapsed)
+        End If
+    End Sub
+
+    Private Sub LockTimeSettingWindow_StateChanged(sender As Object, e As EventArgs) Handles MyBase.StateChanged
+        If LockFullscreen AndAlso Me.WindowState = WindowState.Minimized Then
+            Me.WindowState = WindowState.Normal
+            Me.Topmost = True
+            Me.Activate()
+        End If
+    End Sub
     Private Sub SettingNV_SelectionChanged(sender As NavigationView, args As NavigationViewSelectionChangedEventArgs) Handles SettingNV.SelectionChanged
         Dim item = sender.SelectedItem
         Dim page As iNKORE.UI.WPF.Modern.Controls.Page = Nothing

@@ -57,11 +57,11 @@
                 </ui:SettingsExpander.Items>
             </ui:SettingsExpander>
 
-            <ui:HyperlinkButton Grid.Row="4" x:Name="AboutLockTime"  Margin="0,0,2,0" Content="关于时钟锁屏" />
-            <ui:HyperlinkButton Grid.Row="5" x:Name="CmdHelp"  Margin="0,0,2,0" Content="启动参数说明" />
-            <ui:HyperlinkButton Grid.Row="6" x:Name="BugReport" Margin="0,0,2,0" Content="反馈问题" />
+            <ui:HyperlinkButton Grid.Row="5" x:Name="AboutLockTime"  Margin="0,0,2,0" Content="关于时钟锁屏" />
+            <ui:HyperlinkButton Grid.Row="6" x:Name="CmdHelp"  Margin="0,0,2,0" Content="启动参数说明" />
+            <ui:HyperlinkButton Grid.Row="7" x:Name="BugReport" Margin="0,0,2,0" Content="反馈问题" />
 
-            <ui:SettingsCard Grid.Row="7" Description="关闭后点击退出将直接退出，不再弹出确认对话框" Header="退出时确认" Margin="0,0,0,4" IsEnabled="True">
+            <ui:SettingsCard Grid.Row="4" Description="关闭后点击退出将直接退出，不再弹出确认对话框" Header="退出时确认" Margin="0,0,0,4" IsEnabled="True">
                 <ui:SettingsCard.HeaderIcon>
                     <ui:FontIcon Glyph="&#xe711;"/>
                 </ui:SettingsCard.HeaderIcon>

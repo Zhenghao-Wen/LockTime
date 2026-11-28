@@ -1035,6 +1035,7 @@ Class LockTimeWindow
     Private Sub Settingb_Click(sender As Object, e As RoutedEventArgs)
         Dim SettingWindow As New LockTimeSettingWindow
         SettingWindow.Owner = Me
+        SettingWindow.LockFullscreen = (Me.WindowStyle = WindowStyle.None AndAlso Me.WindowState = WindowState.Maximized)
         SettingWindow.ShowDialog()
         'Await Task.Run(Sub()
         '                   Dim SettingWindow As New LockTimeSettingWindow
